@@ -238,12 +238,13 @@ void BossLevel::InitLayers()
     using namespace Resources;
     using namespace GameSettings;
 
-    cameraSystem->AddLayer(new StaticLayer(BossBackground, Vector2{ 0, 0 }, 1.0f));
-    cameraSystem->AddLayer(new StaticLayer(BossDarkClouds, Vector2{ 0, 0 }, 1.0f));
-    cameraSystem->AddLayer(new StaticLayer(BossFloor, Vector2{ 0, 0 }, 1.0f));
-    cameraSystem->AddLayer(new StaticLayer(BossCurtains, Vector2{ 0, 0 }, 1.0f));
-    cameraSystem->AddLayer(new StaticLayer(BossWalls, Vector2{ 0, 0 }, 1.0f));
-    cameraSystem->AddLayer(new AnimatedLayer(BossPillar, 15, 0.2f, Vector2{ 0, 0 }, 1.0f));
+    const float scale=GameHeight/180.0f;
+    cameraSystem->AddLayer(new StaticLayer(BossBackground, Vector2{ 0, 0 }, scale));
+    cameraSystem->AddLayer(new StaticLayer(BossDarkClouds, Vector2{ 0, 0 }, scale));
+    cameraSystem->AddLayer(new StaticLayer(BossFloor, Vector2{ 0, 0 }, scale));
+    cameraSystem->AddLayer(new StaticLayer(BossCurtains, Vector2{ 0, 0 }, scale));
+    cameraSystem->AddLayer(new StaticLayer(BossWalls, Vector2{ 0, 0 }, scale));
+    cameraSystem->AddLayer(new AnimatedLayer(BossPillar, 15, 0.2f, Vector2{ 0, 0 }, scale));
 }
 
 bool BossLevel::checkForCollisions(Vector2 circleCenter, float circleRadius)

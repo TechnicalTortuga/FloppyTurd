@@ -62,7 +62,7 @@ void SewerLevel::ResetJanitor()
 void SewerLevel::DrawJanitor() const
 {
     if (!janitorVisible) return;
-    janitorCurrent->Draw(janitorX, 100.0f);
+    janitorCurrent->Draw(janitorX, GameSettings::PortraitArena ? GameSettings::GameHeight-125 : 100.0f);
 }
 
 void SewerLevel::UpdateJanitor(float deltaTime)
@@ -73,7 +73,7 @@ void SewerLevel::UpdateJanitor(float deltaTime)
         if (janitorTimer >= janitorNextAppearance)
         {
             janitorVisible = true;
-            janitorX = 330.0f;
+            janitorX = GameSettings::GameWidth+10;
             janitorIsShocked = false;
             janitorCurrent = janitorSweep;
             janitorCurrent->ResetAnimation();

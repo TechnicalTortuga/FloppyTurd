@@ -4,6 +4,7 @@
 #include "GameSettings.h"
 #include "Projectile.h"
 #include <vector>
+#include <algorithm>
 #include "Hat.h"
 #include "Game.h"
 
@@ -47,7 +48,9 @@ public:
 	void Shoot();
 	void Revive();
 	void SetHealth(int hp);
-	void ResetPosition();
+	void ResetPosition(Vector2 spawn={50.0f,90.0f});
+	void SetPosition(Vector2 position);
+	void SetProjectileSkills(int homing, int split) { homingRank=std::clamp(homing,0,2); splitRank=std::clamp(split,0,2); }
 
 	int GetHealth() const { return health; }
 	Vector2 GetPosition() const { return pos; }
@@ -137,6 +140,8 @@ private:
 	std::vector<Projectile*> projectiles;
 	float shootCooldown{ 0.5f };
 	float shootTimer{ 0.0f };
+	int homingRank=0;
+	int splitRank=0;
 
 	Hat* currentSelectedHat{ nullptr };
 

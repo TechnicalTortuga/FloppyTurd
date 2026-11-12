@@ -56,6 +56,7 @@ public:
     void FadeOutMusic(float deltaTime);
     void SetCurrentLevel(int levelIndex);
     bool IsLoadingLevel() const { return pendingLevel >= 0; }
+    int MobileOrientationMask() const { return mobileRun ? (savedLevelIndex==5 ? 32 : 16) : 0; }
     void UnlockSkill(int skillIndex);
     void OutputHatMenu();
     void LoadSessionRecords();
@@ -90,6 +91,15 @@ private:
     BossHealthBar* bossHealthBar = nullptr;
 
     void DrawUI();
+    void DrawMobileHUD();
+    void ApplyPlayerSpawn();
+    bool mobileRun = false;
+    void DrawMobilePause();
+    void DrawMobileGameOver();
+    void ReturnToMenu();
+    void RetryLevel();
+    void LeaveGameOver();
+    int mobileSelectedHat = 0;
     void UpdatePlayerPosition();
 
     float deltaTime{};
@@ -148,7 +158,12 @@ private:
     int sessionRecords[6] = { 0, 0, 0, 0, 0, 0 };
     int difficultyIndex = 1;
 
-    static constexpr int totalSkills = 6; // Updated to 6 (removed Big Turd Form, added Heart Magnet, Coin Shield)
+    static constexpr int totalSkills = 8;
+    int SkillRank(int index) const;
+    int SkillCost(int index) const;
+    bool SkillPrerequisite(int index) const;
+    const char* SkillTitle(int index) const;
+    const char* SkillPurchaseLabel(int index) const;
     int selectedSkill = 0; // Renamed from selectedNode for clarity
     bool skillUnlocked[totalSkills]{ false };
     const char* skillNames[totalSkills]{
@@ -157,7 +172,9 @@ private:
         "Coin Magnet",
         "Heart Magnet",
         "Split my heart in 3 Pieces",
-        "Coin Shield"
+        "Coin Shield",
+        "Homing Shots",
+        "Split Shot"
     };
     const char* skillDescs[totalSkills]{
         "Shoot poop with S (1 coin).",
@@ -165,7 +182,9 @@ private:
         "Coins pull toward you.",
         "Hearts pull toward you.",
         "Upgrade half hearts to thirds.",
-        "Survive last hit by dropping coins."
+        "Survive last hit by dropping coins.",
+        "Seek enemies. Rank II: stronger.",
+        "2 shots, then 3. Costs 1 coin."
     };
     const int skillCosts[totalSkills]{
         50,   // Turd Shot
@@ -173,7 +192,9 @@ private:
         150,  // Coin Magnet
         150,  // Heart Magnet
         750,  // Heart Thirds (upgraded cost)
-        500   // Coin Shield
+        500,  // Coin Shield
+        300,  // Homing rank I; rank II costs 700
+        200   // Split rank I; rank II costs 400
     };
 
     GameStats stats;

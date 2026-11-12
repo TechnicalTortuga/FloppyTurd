@@ -128,6 +128,7 @@ void LevelManager::UpdateEnemyFactory()
 
 LevelManager::~LevelManager()
 {
+    if (instance==this) instance=nullptr;
     TraceLog(LOG_INFO, "[LevelManager] Destroying LevelManager, boss ref count: %d", boss.use_count());
     boss.reset();
 }

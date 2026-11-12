@@ -1,6 +1,7 @@
 #include "Loading.h"
 #include "ResourceCompat.h"
 #include "TextureCache.h"
+#include "MobileUi.h"
 
 Loading::Loading(Game* game)
 	: game(game), rotationAngle(0.0f), rotationTimer(0.0f), rotationComplete(false)
@@ -42,6 +43,11 @@ void Loading::Draw()
 	// Draw rotating poophat in bottom right corner, doubled to 32x32
 	float x = 320.0f - 32.0f - 10.0f; // 10px margin from right edge, adjusted for 32x32
 	float y = 180.0f - 32.0f - 10.0f; // 10px margin from bottom edge, adjusted for 32x32
+    if (RenderLayout::mobile) {
+        const auto area=MobileUi::Content();
+        x=area.x+area.width/2; y=area.y+area.height/2;
+        MobileUi::Text(game->GetScaledFont(1),"Loading...",{area.x,y+32,area.width,30});
+    }
 	Rectangle dest = { x, y, 32.0f, 32.0f }; // Doubled size
 	Rectangle source = { 0, 0, (float)poophat.width, (float)poophat.height };
 	DrawTexturePro(poophat, source, dest, { 16.0f, 16.0f }, rotationAngle, WHITE); // Adjusted origin for center rotation

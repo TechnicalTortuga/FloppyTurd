@@ -5,7 +5,7 @@ import vm from 'node:vm';
 const source = fs.readFileSync(new URL('../web/bridge.js', import.meta.url), 'utf8');
 function harness(extra = "", overrides = {}) {
   const listeners = {}, sent = [], calls = [], elements = {};
-  for (const name of ['canvas','gate','play','status','hint','fullscreen','mobile-top','mobile-bottom','touch-back','touch-pause','touch-jump','touch-shoot','enable-audio','asset-error','asset-retry']) elements[name] = { hidden:false, textContent:'', clientWidth:960, clientHeight:540, addEventListener(name, fn) { this[name] = fn; }, focus() {} };
+  for (const name of ['canvas','gate','play','status','hint','fullscreen','mobile-top','mobile-bottom','touch-back','touch-pause','touch-jump','touch-shoot','enable-audio','asset-error','asset-retry','browser-chrome','safe-area','rotation-gate','rotation-title','rotation-description','rotation-back']) elements[name] = { hidden:false, textContent:'', clientWidth:960, clientHeight:540, addEventListener(name, fn) { this[name] = fn; }, focus() {} };
   elements.canvas.getContext = function(type,attributes) { this.contextAttributes=attributes; return {}; };
   const parent = { postMessage: (message, origin) => sent.push({message, origin}) };
   const context = { console, URL, URLSearchParams, Uint8Array,
@@ -146,4 +146,65 @@ test('portfolio pointer validation and message delivery do not synthesize DOM ev
   assert.ok(h.calls.some(c=>c[0]==='floppy_activate_audio'));
   assert.equal(h.context.floppyEmbed.input({schema:'portfolio-input',version:1,kind:'reset',reason:'blur'}),true);
   assert.ok(h.calls.some(c=>c[0]==='floppy_reset_input'));
+});
+
+
+test('expanded touch viewport fills the canvas and inline CRT retains its crop', () => {
+  const h=harness('&touch=1');
+  h.elements.canvas.width=393; h.elements.canvas.height=696;
+  assert.deepEqual(JSON.parse(JSON.stringify(h.context.floppyEmbed.getViewport())),{x:0,y:0,width:393,height:696});
+  h.context.floppyEmbed.setPresentation({inline:true});
+  const inline=h.context.floppyEmbed.getViewport();
+  assert.ok(Math.abs(inline.width/inline.height-16/9)<0.001);
+  assert.ok(inline.y>0);
+  h.context.floppyEmbed.setPresentation({inline:false});
+  assert.equal(h.context.floppyEmbed.getViewport().height,696);
+});
+
+test('safe area and visible DOM control bounds reach the game without a protocol change', () => {
+  const h=harness('&touch=1',{standalone:true,getComputedStyle:()=>({paddingTop:'20px',paddingRight:'12px',paddingBottom:'34px',paddingLeft:'12px'})});
+  h.elements.canvas.clientWidth=393; h.elements.canvas.clientHeight=696;
+  h.elements.canvas.getBoundingClientRect=()=>({top:0,bottom:696});
+  h.elements['browser-chrome'].getBoundingClientRect=()=>({bottom:74});
+  h.elements['mobile-bottom'].getBoundingClientRect=()=>({top:600});
+  h.context.Module.onRuntimeInitialized(); h.elements.play.click();
+  h.context.floppySetUiState(3);
+  const safe=Array.from(h.calls.filter(c=>c[0]==='floppy_safe_area').at(-1)[3]);
+  assert.deepEqual(safe,[84,12,106,12]);
+  assert.equal(h.elements['touch-shoot'].hidden,false);
+  h.context.floppySetUiState(7);
+  assert.equal(h.calls.filter(c=>c[0]==='floppy_safe_area').at(-1)[3][2],34);
+  assert.equal(h.elements['mobile-bottom'].hidden,true);
+  assert.ok(!h.calls.some(c=>c[0]==='floppy_set_paused' && c[3][0]===1));
+});
+
+
+test('normal touch runs pause in landscape; boss runs pause in portrait; inline bypasses the orientation gate', () => {
+  const h=harness('&touch=1',{standalone:true});
+  h.context.Module.onRuntimeInitialized(); h.elements.play.click();
+  h.context.floppySetUiState(17);
+  assert.equal(h.elements['rotation-gate'].hidden,false);
+  assert.equal(h.elements['mobile-bottom'].hidden,true);
+  assert.equal(h.calls.filter(c=>c[0]==='floppy_orientation').at(-1)[3][0],1);
+  assert.equal(h.context.floppyEmbed.input(portfolioKey('Space')),false);
+  h.elements.canvas.clientWidth=393;h.elements.canvas.clientHeight=696;
+  h.context.floppySetUiState(17);
+  assert.equal(h.elements['rotation-gate'].hidden,true);
+  assert.equal(h.calls.filter(c=>c[0]==='floppy_orientation').at(-1)[3][0],0);
+  h.context.floppySetUiState(33);
+  assert.equal(h.elements['rotation-gate'].hidden,false);
+  assert.equal(h.elements['rotation-title'].textContent,'Turn your phone sideways');
+  h.context.floppyEmbed.setPresentation({inline:true});
+  assert.equal(h.elements['rotation-gate'].hidden,true);
+  assert.equal(h.calls.filter(c=>c[0]==='floppy_orientation').at(-1)[3][0],0);
+  h.context.floppyEmbed.setPresentation({inline:false});
+  h.elements['rotation-back'].click();
+  assert.deepEqual(Array.from(h.calls.filter(c=>c[0]==='floppy_touch').at(-1)[3]),[4,1]);
+});
+
+test('both canonical v3 and legacy v2 browser saves restore independently', () => {
+  const written=[];
+  const h=harness('',{FS:{mkdirTree(){},writeFile:(path,bytes)=>written.push([path,Array.from(bytes)])},localStorage:{getItem:key=>key==='floppy-turd-save-v3'?'AwABAg==':'AgA='},atob});
+  h.context.Module.preRun[0]();
+  assert.deepEqual(written,[['/saves/floppy_turd_stats.bin',[2,0]],['/saves/floppy_turd_stats_v3.bin',[3,0,1,2]]]);
 });

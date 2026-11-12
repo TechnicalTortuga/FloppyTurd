@@ -2,6 +2,7 @@
 #include <raymath.h>
 #include "ResourceCompat.h"
 #include <iostream>
+#include "GameSfx.h"
 
 ToiletPaper::ToiletPaper(Vector2 spawnPos, float panspeed, float extra)
     : pos(spawnPos), speed(panspeed), extraSpeed(extra), isHurt(false), hurtTimer(0.0f)
@@ -29,6 +30,15 @@ ToiletPaper::~ToiletPaper()
 
 void ToiletPaper::Update(float deltaTime)
 {
+    // Defeat animation must advance even when a roll was waiting to activate.
+    if (isHurt) {
+        hurtTimer -= deltaTime;
+        tpSpriteHurt->Update(deltaTime);
+        if (tpSpriteHurt->hasLoopedOnce() && !tpSpriteHurt->IsFrozen()) tpSpriteHurt->SetFrameFrozen(3);
+        pos.x -= speed*deltaTime;
+        UpdateHitbox();
+        return;
+    }
     if (!active) {
         idleTimer += deltaTime;
         if (idleTimer >= idleDelay) {
@@ -43,18 +53,7 @@ void ToiletPaper::Update(float deltaTime)
     float wave = sinf(pos.x * 0.015f + phaseOffset);
     pos.y = startY + 50.0f * (inverted ? -wave : wave);
 
-    if (isHurt) {
-        hurtTimer -= deltaTime;
-        if (hurtTimer > 0.0f && !tpSpriteHurt->hasLoopedOnce()) {
-            tpSpriteHurt->Update(deltaTime);
-        }
-        if (tpSpriteHurt->hasLoopedOnce() && !tpSpriteHurt->IsFrozen()) {
-            tpSpriteHurt->SetFrameFrozen(3); // Freeze on last frame (index 3 for 4 frames)
-        }
-    }
-    else {
-        tpSpriteIdle->Update(deltaTime);
-    }
+    tpSpriteIdle->Update(deltaTime);
 
     UpdateHitbox();
 }
@@ -76,8 +75,10 @@ void ToiletPaper::TakeDamage()
 {
     if (!isHurt) {
         isHurt = true;
+        GameSfx::Play("tpkill");
         hurtTimer = 0.5f;
         tpSpriteHurt->ResetAnimation();
+        UpdateHitbox();
     }
 }
 

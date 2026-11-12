@@ -28,7 +28,7 @@
   const fullscreen = document.getElementById('fullscreen');
   function requestFullscreen() {
     if (document.fullscreenElement) document.exitFullscreen?.().catch(console.warn);
-    else document.documentElement.requestFullscreen?.().catch(() => { status.textContent = 'Native fullscreen is unavailable in this browser. The game still fits this window.'; });
+    else document.documentElement?.requestFullscreen?.().catch(() => {});
   }
   fullscreen.hidden = embedded;
   fullscreen.addEventListener('click', requestFullscreen);
@@ -49,6 +49,13 @@
   const jumpButton = document.getElementById('touch-jump');
   const shootButton = document.getElementById('touch-shoot');
   const audioButton = document.getElementById('enable-audio');
+  const chrome = document.getElementById('browser-chrome');
+  const safeProbe = document.getElementById('safe-area');
+  const rotationGate = document.getElementById('rotation-gate');
+  const rotationTitle = document.getElementById('rotation-title');
+  const rotationDescription = document.getElementById('rotation-description');
+  let orientationWaiting = false;
+  let lastLayout = '';
   const assetError = document.getElementById('asset-error');
   function updateAudioControl() {
     if (!audioButton) return;
@@ -70,22 +77,38 @@
     touchAction(1, false);
     if (started && !disposed) Module.ccall('floppy_reset_input', null, [], []);
   }
+  function needsRotation() {
+    if (!started || !touchMode || inlinePresentation || !(gameUiState & 1)) return false;
+    const portrait = canvas.clientHeight >= canvas.clientWidth;
+    return !!((gameUiState & 16) && !portrait || (gameUiState & 32) && portrait);
+  }
   function updateMobileControls() {
     if (started && appliedTouchMode !== touchMode) {
       appliedTouchMode = touchMode;
       touchAction(3, touchMode);
     }
     const visible = started && touchMode && !inlinePresentation && state.visible && !document.hidden && !disposed;
+    const waiting=needsRotation();
+    if (waiting !== orientationWaiting) {
+      orientationWaiting=waiting; releaseTouches();
+      Module.ccall('floppy_orientation',null,['number'],[waiting ? 1 : 0]);
+    }
+    if (rotationGate) rotationGate.hidden=!visible || !waiting;
+    if (rotationTitle) rotationTitle.textContent=gameUiState & 32 ? 'Turn your phone sideways' : 'Turn your phone upright';
+    if (rotationDescription) rotationDescription.textContent=gameUiState & 32 ? 'The final level uses landscape. Your run is paused while you rotate.' : 'Normal levels use portrait. Your run is paused while you rotate.';
+    if (chrome) chrome.hidden = !started || inlinePresentation || !state.visible || document.hidden || disposed;
+    fullscreen.hidden = embedded || inlinePresentation || (typeof document.documentElement?.requestFullscreen !== 'function');
     const active = !!(gameUiState & 1);
     const paused = !!(gameUiState & 4), gameOver = !!(gameUiState & 8);
     mobileTop.hidden = !visible;
     backButton.hidden = !embedded;
-    pauseButton.hidden = !active || gameOver;
+    pauseButton.hidden = !active || gameOver || waiting;
     pauseButton.textContent = paused ? 'Resume' : 'Pause';
-    mobileBottom.hidden = !visible || !active || paused || gameOver;
+    mobileBottom.hidden = !visible || !active || paused || gameOver || waiting;
     shootButton.hidden = !(gameUiState & 2);
     updateAudioControl();
     if (touchMode && !started) document.getElementById('hint').textContent = 'Tap the game or Jump · Hold Shoot when unlocked · Pause anytime';
+    if (started) resize();
   }
   window.floppySetUiState = mask => { gameUiState = mask; updateMobileControls(); };
   window.addEventListener('pointerdown', event => {
@@ -98,7 +121,7 @@
     element.setPointerCapture?.(event.pointerId);
   }
   canvas.addEventListener('pointerdown', event => {
-    if (!started || !(gameUiState & 1) || (gameUiState & 12) || !['touch','pen'].includes(event.pointerType)) return;
+    if (!started || orientationWaiting || !(gameUiState & 1) || (gameUiState & 12) || !['touch','pen'].includes(event.pointerType)) return;
     capture(event, canvas); jumpPointers.add(event.pointerId); touchAction(0, true);
   }, {capture:true, passive:false});
   function endCanvasTouch(event) {
@@ -129,6 +152,7 @@
   bindControl(shootButton, 1, true);
   bindControl(pauseButton, 2);
   backButton.addEventListener('click', () => send('game:request-close'));
+  document.getElementById('rotation-back')?.addEventListener('click', () => touchAction(4,true));
   window.addEventListener('blur', () => { releaseTouches(); applyState(); });
   window.addEventListener('focus', applyState);
   updateMobileControls();
@@ -138,9 +162,25 @@
   window.floppySend = type => send(type === 'exit' ? 'game:request-close' : type);
   function resize() {
     if (!started) return;
+    if (needsRotation() !== orientationWaiting) { updateMobileControls(); return; }
     const width = inlinePresentation ? 800 : Math.max(1, Math.round(canvas.clientWidth));
     const height = inlinePresentation ? 450 : Math.max(1, Math.round(canvas.clientHeight));
+    const style = safeProbe && window.getComputedStyle ? window.getComputedStyle(safeProbe) : {};
+    const number = value => Math.max(0, parseFloat(value) || 0);
+    const bounds = element => element?.getBoundingClientRect?.();
+    const canvasRect = bounds(canvas) || {top:0,bottom:height};
+    let top=number(style.paddingTop), right=number(style.paddingRight), bottom=number(style.paddingBottom), left=number(style.paddingLeft);
+    if (touchMode && !inlinePresentation) {
+      const header = chrome && !chrome.hidden ? bounds(chrome) : null;
+      const dock = mobileBottom && !mobileBottom.hidden ? bounds(mobileBottom) : null;
+      if (header) top=Math.max(top,header.bottom-canvasRect.top+10);
+      if (dock) bottom=Math.max(bottom,canvasRect.bottom-dock.top+10);
+    }
+    const layout = JSON.stringify([width,height,top,right,bottom,left,touchMode,inlinePresentation]);
+    if (layout === lastLayout) return;
+    releaseTouches(); lastLayout=layout;
     Module.ccall('floppy_resize', null, ['number','number'], [width, height]);
+    Module.ccall('floppy_safe_area', null, ['number','number','number','number'], [top,right,bottom,left]);
   }
   function applyState() {
     updateMobileControls();
@@ -178,6 +218,7 @@
   }
   function getViewport() {
     const width = canvas.width || 800, height = canvas.height || 450;
+    if (touchMode && !inlinePresentation) return {x:0,y:0,width,height};
     let scale = Math.max(0.001, Math.min(width/400,height/225));
     if (!touchMode && scale >= 1) scale = Math.floor(scale);
     return {x:(width-400*scale)/2,y:(height-225*scale)/2,width:400*scale,height:225*scale};
@@ -211,7 +252,7 @@
       touchMode = payload.maxTouchPoints > 0 || payload.primaryPointer === 'coarse' || payload.anyCoarsePointer;
       updateMobileControls(); return true;
     }
-    if (!started) return false;
+    if (!started || orientationWaiting) return false;
     if (payload.kind === 'key') {
       const modifiers = payload.modifiers;
       if (!['down','up'].includes(payload.phase) || typeof payload.repeat !== 'boolean' || !modifiers || !['shift','ctrl','alt','meta'].every(key=>typeof modifiers[key]==='boolean')) return false;
@@ -288,15 +329,20 @@
   document.addEventListener('visibilitychange', applyState);
   window.addEventListener('pagehide', () => { disposed = true; applyState(); });
   new ResizeObserver(resize).observe(canvas);
+  if (chrome) new ResizeObserver(resize).observe(chrome);
+  if (mobileBottom) new ResizeObserver(resize).observe(mobileBottom);
+  window.visualViewport?.addEventListener('resize', resize);
   window.Module = {
     canvas,
     noInitialRun: true,
     preRun: [() => {
       FS.mkdirTree('/saves');
-      try {
-        const encoded = localStorage.getItem('floppy-turd-save-v2');
-        if (encoded) FS.writeFile('/saves/floppy_turd_stats.bin', Uint8Array.from(atob(encoded), char => char.charCodeAt(0)));
-      } catch (error) { console.warn('Saved progress unavailable', error); }
+      for (const [key,name] of [['floppy-turd-save-v2','floppy_turd_stats.bin'],['floppy-turd-save-v3','floppy_turd_stats_v3.bin']]) {
+        try {
+          const encoded = localStorage.getItem(key);
+          if (encoded) FS.writeFile('/saves/'+name, Uint8Array.from(atob(encoded), char => char.charCodeAt(0)));
+        } catch (error) { console.warn('Saved progress unavailable', error); }
+      }
     }],
     setStatus: text => { if (!initialized && text) status.textContent = text; },
     onAbort: fail,

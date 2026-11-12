@@ -1,5 +1,6 @@
 ﻿#include "RatKing.h"
 #include "ResourceCompat.h"
+#include "GameSfx.h"
 #include <raymath.h>
 #include "AudioClip.h"
 #include "LevelManager.h"
@@ -318,6 +319,8 @@ void RatKing::HandleDeath(float dt)
 void RatKing::TakeDamage(int dmg)
 {
     if (currentState == HURT || currentState == DEATH) return;
+    if (dmg <= 0) return;
+    GameSfx::Play("ratkinghurt");
 
     health -= dmg;
     if (health <= 0) {

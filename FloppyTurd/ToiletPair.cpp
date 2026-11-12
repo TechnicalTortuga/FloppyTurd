@@ -1,4 +1,5 @@
-﻿#include "ToiletPair.h"
+#include "PipeLayout.h"
+#include "ToiletPair.h"
 #include <iostream>
 #include <random>
 #include "TextureCache.h"
@@ -45,6 +46,7 @@ ToiletPair::ToiletPair(int xPos, int yPos, bool isSnowy)
 	yOffsetRandomizer();
 
 	hasScored = false;
+    UpdateHitbox();
 }
 
 ToiletPair::~ToiletPair()
@@ -72,45 +74,13 @@ void ToiletPair::resetScore()
 	hasScored = false;
 }
 
-void ToiletPair::UpdateHitbox()
-{
-	using namespace GameSettings;
-
-	float topWidthScaled = _TopToilet.width;
-	float topHeightScaled = _TopToilet.height;
-	float bottomWidthScaled = _BottomToilet.width;
-	float bottomHeightScaled = _BottomToilet.height;
-
-	hitboxTop.x = pos.x + 18;
-	hitboxTop.y = (2 * -topHeightScaled / 3) + yOffset;
-	hitboxTop.width = 30;
-	hitboxTop.height = (6 * topHeightScaled / 7);
-
-	hitboxBottom.x = pos.x + 18;
-	hitboxBottom.y = (bottomHeightScaled / 3) + yOffset + (2 * bottomHeightScaled / 7);
-	hitboxBottom.width = 30;
-	hitboxBottom.height = bottomHeightScaled;
+void ToiletPair::UpdateHitbox() {
+    const auto pair=PipeLayout::Calculate(pos.x,yOffset,_TopToilet.height,_BottomToilet.height);
+    hitboxTop=pair.topHit; hitboxBottom=pair.bottomHit;
 }
 
-void ToiletPair::Draw()
-{
-	DrawTexturePro(
-		_TopToilet,
-		{ 0, 0, (float)(_TopToilet.width), (float)(_TopToilet.height) },
-		{ pos.x, (2 * -_TopToilet.height / 3) + yOffset, (float)(_TopToilet.width), (float)(_TopToilet.height) },
-		{ 0, 0 },
-		0.0f,
-		WHITE
-	);
-
-	DrawTexturePro(
-		_BottomToilet,
-		{ 0, 0, (float)(_BottomToilet.width), (float)(_BottomToilet.height) },
-		{ pos.x, (_BottomToilet.height / 3) + yOffset + (_BottomToilet.height / 7), (float)(_BottomToilet.width), (float)(_BottomToilet.height) },
-		{ 0, 0 },
-		0.0f,
-		WHITE
-	);
+void ToiletPair::Draw() {
+    PipeLayout::Draw(_TopToilet,_BottomToilet,pos.x,yOffset);
 }
 
 Rectangle ToiletPair::GetTopHitbox()

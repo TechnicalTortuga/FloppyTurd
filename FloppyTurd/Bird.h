@@ -20,6 +20,9 @@ private:
     float baseY;         // original Y around which we hover
     float hoverTimer;    // timer for sine wave hover
     float speed;         // horizontal speed
+    float hoverSpeed=1.2f;
+    float hoverAmplitude=0;
+    float hoverPhase=0;
 
     Sprite* currentSprite;
     Sprite* flySprite;   // normal flying loop

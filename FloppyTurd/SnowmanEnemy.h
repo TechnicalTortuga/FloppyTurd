@@ -23,6 +23,9 @@ public:
     Rectangle GetHitbox() const override;
     void TakeDamage() override;
     bool ShouldBeRemoved() const override;
+    // iOS snowmen are scenery/throwers, not projectile targets; their snowballs
+    // remain hazards. Prevent farming kills or wasting homing shots on scenery.
+    bool IsCombatTarget() const override { return false; }
     void SetSpeed(float speed) override; // Inherited from Enemy
 
     std::vector<SnowballProjectile*> GetSnowballs() const;

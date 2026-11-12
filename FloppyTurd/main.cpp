@@ -27,6 +27,20 @@ extern "C"
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
 #endif
+void floppy_safe_area(float top, float right, float bottom, float left) {
+    if (activeGame) activeGame->SetSafeArea(top, right, bottom, left);
+}
+extern "C"
+#ifdef __EMSCRIPTEN__
+EMSCRIPTEN_KEEPALIVE
+#endif
+void floppy_orientation(int waiting) {
+    if (activeGame) activeGame->SetOrientationWaiting(waiting!=0);
+}
+extern "C"
+#ifdef __EMSCRIPTEN__
+EMSCRIPTEN_KEEPALIVE
+#endif
 void floppy_touch(int action, int down) {
     if (activeGame) activeGame->TouchAction(action, down != 0);
 }

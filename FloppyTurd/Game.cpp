@@ -180,13 +180,19 @@ void Game::SetHostPaused(bool paused)
     hostPaused = paused;
     if (paused && playing) playing->CancelTouchInput();
     if (paused) EmbedInput::Reset();
-    SetMasterVolume(paused || !audioActivated ? 0.0f : 1.0f);
+    SetMasterVolume(paused || orientationWaiting || !audioActivated ? 0.0f : 1.0f);
     if (paused && playing) playing->GetStats().Save();
 }
 
 void Game::SetAudioActivated(bool enabled) {
     audioActivated = enabled;
-    SetMasterVolume(enabled && !hostPaused && !focusPaused ? 1 : 0);
+    SetMasterVolume(enabled && !hostPaused && !focusPaused && !orientationWaiting ? 1 : 0);
+}
+
+void Game::SetOrientationWaiting(bool waiting) {
+    orientationWaiting=waiting;
+    if (waiting) { EmbedInput::Reset(); if (playing) playing->CancelTouchInput(); }
+    SetMasterVolume(waiting || hostPaused || !audioActivated ? 0 : 1);
 }
 
 void Game::SetInlinePresentation(bool enabled) {
@@ -195,8 +201,21 @@ void Game::SetInlinePresentation(bool enabled) {
     if (playing) playing->CancelTouchInput();
 }
 
+void Game::SetSafeArea(float top, float right, float bottom, float left) {
+    RenderLayout::safeTop = std::max(0.0f, top);
+    RenderLayout::safeRight = std::max(0.0f, right);
+    RenderLayout::safeBottom = std::max(0.0f, bottom);
+    RenderLayout::safeLeft = std::max(0.0f, left);
+}
+
+void Game::RefreshLayout() {
+    RenderLayout::Configure(GetScreenWidth(), GetScreenHeight(), touchPresentation && !inlinePresentation);
+}
+
 void Game::PointerInput(int phase, float x, float y) {
-    const auto view = FloppyViewport::Fit(GetScreenWidth(), GetScreenHeight(), !touchPresentation);
+    RefreshLayout();
+    const auto view = FloppyViewport::Fit(GetScreenWidth(), GetScreenHeight(), !touchPresentation,
+        RenderLayout::surfaceWidth, RenderLayout::surfaceHeight);
     EmbedInput::Pointer(phase, {view.x + x * view.width, view.y + y * view.height});
 }
 
@@ -208,9 +227,23 @@ void Game::TouchAction(int action, bool down)
 
 void Game::Tick()
 {
+    RefreshLayout();
+    const int targetWidth = (int)std::ceil(RenderLayout::surfaceWidth * RenderLayout::Density);
+    const int targetHeight = (int)std::ceil(RenderLayout::surfaceHeight * RenderLayout::Density);
+    if (target.texture.width != targetWidth || target.texture.height != targetHeight) {
+        // Allocate before releasing the old image; visibility suspension can keep drawing it.
+        const auto resized = LoadRenderTexture(targetWidth, targetHeight);
+        if (resized.id) {
+            BeginTextureMode(resized); ClearBackground(BLACK);
+            DrawTexturePro(target.texture,{0,0,(float)target.texture.width,-(float)target.texture.height},
+                {0,0,(float)targetWidth,(float)targetHeight},{0,0},0,WHITE);
+            EndTextureMode();
+            UnloadRenderTexture(target); target = resized; SetTextureFilter(target.texture, TEXTURE_FILTER_POINT);
+        }
+    }
     if (warmupFrames > 0) { --warmupFrames; BeginDrawing(); ClearBackground(BLACK); EndDrawing(); return; }
     // Keep polling events while suspended, but freeze all simulation timers.
-    if (hostPaused || (!hostManagedVisibility && !IsWindowFocused())) {
+    if (hostPaused || orientationWaiting || (!hostManagedVisibility && !IsWindowFocused())) {
         if (!focusPaused) {
             SetMasterVolume(0.0f);
             if (playing) playing->CancelTouchInput();
@@ -220,8 +253,9 @@ void Game::Tick()
         focusPaused = true;
         BeginDrawing();
         ClearBackground(BLACK);
-        const auto frozen = FloppyViewport::Fit(GetScreenWidth(), GetScreenHeight(), !touchPresentation);
-        DrawTexturePro(target.texture, {0,0,800,-450}, {frozen.x,frozen.y,frozen.width,frozen.height}, {0,0}, 0, WHITE);
+        const auto frozen = FloppyViewport::Fit(GetScreenWidth(), GetScreenHeight(), !touchPresentation,
+            RenderLayout::surfaceWidth, RenderLayout::surfaceHeight);
+        DrawTexturePro(target.texture, {0,0,(float)target.texture.width,-(float)target.texture.height}, {frozen.x,frozen.y,frozen.width,frozen.height}, {0,0}, 0, WHITE);
         EndDrawing();
         return;
     }
@@ -239,7 +273,8 @@ void Game::Tick()
 #endif
         return;
     }
-    const auto view = FloppyViewport::Fit(GetScreenWidth(), GetScreenHeight(), !touchPresentation);
+    const auto view = FloppyViewport::Fit(GetScreenWidth(), GetScreenHeight(), !touchPresentation,
+        RenderLayout::surfaceWidth, RenderLayout::surfaceHeight);
     const Vector2 rawMouse = EmbedInput::MousePosition();
     // Leave off-canvas input outside the UI instead of snapping it onto buttons.
     g_AIGUI.mousePos = RenderLayout::ToUi({(rawMouse.x - view.x) / view.scale, (rawMouse.y - view.y) / view.scale}, gamestate == PLAYING);
@@ -249,6 +284,7 @@ void Game::Tick()
     PerformanceProfiler::GetInstance().EndFrame();
     BeginTextureMode(target);
     ClearBackground(BLACK);
+    if (RenderLayout::mobile) DrawRectangleGradientV(0, 0, target.texture.width, target.texture.height, {20,35,30,255}, {6,12,10,255});
     if (gamestate == PLAYING) playing->Draw();
     else {
         AIGUI_SetRenderCamera(RenderLayout::UiCamera());
@@ -264,14 +300,15 @@ void Game::Tick()
     EndTextureMode();
     BeginDrawing();
     ClearBackground(BLACK);
-    DrawTexturePro(target.texture, {0, 0, 800, -450},
+    DrawTexturePro(target.texture, {0, 0, (float)target.texture.width, -(float)target.texture.height},
         {view.x, view.y, view.width, view.height}, {0, 0}, 0, WHITE);
     EndDrawing();
     EmbedInput::EndFrame();
 #ifdef __EMSCRIPTEN__
     const bool active = gamestate == PLAYING && !playing->IsLoadingLevel();
     const int webUiState = (active ? 1 : 0) | (active && playing->player->CanShoot() ? 2 : 0)
-        | (active && playing->IsPaused() ? 4 : 0) | (active && playing->IsGameOver() ? 8 : 0);
+        | (active && playing->IsPaused() ? 4 : 0) | (active && playing->IsGameOver() ? 8 : 0)
+        | (active ? playing->MobileOrientationMask() : 0);
     if (webUiState != lastWebUiState) {
         lastWebUiState = webUiState;
         EM_ASM({ if (window.floppySetUiState) window.floppySetUiState($0); }, webUiState);
@@ -376,6 +413,7 @@ void Game::SetGameState(GAMESTATE newState)
 {
 	std::cout << "Switching to " << newState << std::endl;
 	gamestate = newState;
+    if (newState != PLAYING) { SetOrientationWaiting(false); GameSettings::SelectArena(false); }
 }
 
 // Implement GetScaledFont method

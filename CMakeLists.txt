@@ -67,7 +67,7 @@ if(EMSCRIPTEN)
     target_link_options(FloppyTurd PRIVATE
         -fexceptions -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=134217728
         -sSTACK_SIZE=2097152 -sFORCE_FILESYSTEM=1
-        "-sEXPORTED_FUNCTIONS=['_main','_floppy_set_paused','_floppy_resize','_floppy_touch','_floppy_key','_floppy_pointer','_floppy_reset_input','_floppy_set_presentation','_floppy_activate_audio']"
+        "-sEXPORTED_FUNCTIONS=['_main','_floppy_set_paused','_floppy_resize','_floppy_safe_area','_floppy_orientation','_floppy_touch','_floppy_key','_floppy_pointer','_floppy_reset_input','_floppy_set_presentation','_floppy_activate_audio']"
         "-sEXPORTED_RUNTIME_METHODS=['ccall','FS','callMain','HEAPF32']"
         "--pre-js=${CMAKE_CURRENT_BINARY_DIR}/asset-catalog.js"
         "--preload-file=${CMAKE_CURRENT_BINARY_DIR}/bootstrap/resources@/resources"
@@ -89,5 +89,14 @@ if(FLOPPY_BUILD_TESTS AND NOT EMSCRIPTEN)
     target_include_directories(FloppyTurdChecks PRIVATE FloppyTurd)
     target_link_libraries(FloppyTurdChecks PRIVATE raylib)
     add_test(NAME regression COMMAND FloppyTurdChecks)
+    add_executable(FloppyTurdLayoutChecks tests/layout_regression.cpp)
+    target_include_directories(FloppyTurdLayoutChecks PRIVATE FloppyTurd)
+    target_link_libraries(FloppyTurdLayoutChecks PRIVATE raylib)
+    add_test(NAME layout_regression COMMAND FloppyTurdLayoutChecks)
+    add_executable(FloppyTurdIosPortChecks tests/ios_port_regression.cpp FloppyTurd/GameStats.cpp FloppyTurd/PlatformLayer.cpp)
+    target_include_directories(FloppyTurdIosPortChecks PRIVATE FloppyTurd)
+    target_link_libraries(FloppyTurdIosPortChecks PRIVATE raylib)
+    add_test(NAME ios_port_regression COMMAND FloppyTurdIosPortChecks)
+    set_tests_properties(ios_port_regression PROPERTIES ENVIRONMENT "FLOPPY_TURD_SAVE_DIR=${CMAKE_CURRENT_BINARY_DIR}/test-ios-port-saves")
     set_tests_properties(regression PROPERTIES ENVIRONMENT "FLOPPY_TURD_SAVE_DIR=${CMAKE_CURRENT_BINARY_DIR}/test-saves")
 endif()

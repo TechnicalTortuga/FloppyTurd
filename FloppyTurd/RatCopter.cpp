@@ -4,6 +4,7 @@
 #include <iostream>
 #include <raymath.h>
 #include "LevelManager.h"
+#include "GameSfx.h"
 
 RatCopter::RatCopter(Vector2 spawnPos, float panspeed) {
     using namespace Resources;
@@ -41,6 +42,15 @@ void RatCopter::Draw() const
 
 void RatCopter::Update(float deltaTime)
 {
+    if (isHurt) {
+        // A defeated copter cannot finish a pullback or attack its old target.
+        pos.x -= speed*deltaTime;
+        hurtTimer -= deltaTime;
+        currentSprite->SetPosition(pos);
+        currentSprite->Update(deltaTime);
+        UpdateHitbox();
+        return;
+    }
     switch (currentMode)
     {
     case Mode::FLY_IN:
@@ -87,17 +97,7 @@ void RatCopter::Update(float deltaTime)
         break;
     }
 
-    if (isHurt) {
-        if (currentSprite != ratSpriteHurt)
-            currentSprite = ratSpriteHurt;
-
-        hurtTimer -= deltaTime;
-        if (hurtTimer > 0.0f)
-            currentSprite->Update(deltaTime);
-    }
-    else {
-        currentSprite->Update(deltaTime);
-    }
+    currentSprite->Update(deltaTime);
     UpdateHitbox();
 }
 
@@ -107,6 +107,7 @@ Rectangle RatCopter::GetHitbox() const
 }
 
 void RatCopter::UpdateHitbox() {
+    if (isHurt) { hitbox={0,0,0,0}; return; }
     int xOffset = pos.x + 5;
     int yOffset = pos.y + 7;
     hitbox.x = xOffset;
@@ -118,8 +119,11 @@ void RatCopter::UpdateHitbox() {
 void RatCopter::TakeDamage() {
     if (!isHurt) {
         isHurt = true;
+        GameSfx::Play("ratkill");
         hurtTimer = 0.5f;
         currentSprite = ratSpriteHurt;
+        currentSprite->ResetAnimation();
+        UpdateHitbox();
     }
 }
 

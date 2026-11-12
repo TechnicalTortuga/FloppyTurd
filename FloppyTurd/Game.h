@@ -28,6 +28,9 @@ public:
     void PointerInput(int phase, float x, float y);
     void SetInlinePresentation(bool enabled);
     void SetAudioActivated(bool enabled);
+    void SetSafeArea(float top, float right, float bottom, float left);
+    void SetOrientationWaiting(bool waiting);
+    bool IsTouchPresentation() const { return touchPresentation; }
 	~Game();
 
 	enum GAMESTATE
@@ -55,6 +58,7 @@ private:
 	Loading* loading; // New loading instance
 
 	void InitClasses();
+    void RefreshLayout();
 	RenderTexture2D target{};
 	int lastWebUiState = -1;
 	int warmupFrames = 2;
@@ -63,6 +67,7 @@ private:
 	bool audioActivated = true;
 	bool touchPresentation = false;
 	bool hostPaused = false;
+    bool orientationWaiting = false;
 	bool focusPaused = false;
 
 	void Update();

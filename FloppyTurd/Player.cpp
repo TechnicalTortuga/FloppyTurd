@@ -2,6 +2,8 @@
 #include "Player.h"
 #include "SoundManager.h"
 #include "CoinBalance.h"
+#include "ProjectileSkills.h"
+#include "GameSfx.h"
 
 Player::Player(Game* g) : game(g) {
 	InitSprites();
@@ -373,8 +375,15 @@ void Player::Shoot() {
 	else if (formLevel == 2 || bigTurdBuffActive) spritePath = "resources/turd/Floppy Poop Large.png";
 
 	Vector2 spawnPos = { pos.x + size.x / 2.f, pos.y + size.y / 2.f - 8 };
-	Projectile* p = new Projectile(spawnPos, { 1, 0 }, projectileSpeed, projectileScale, spritePath);
-	projectiles.push_back(p);
+	std::vector<const void*> targets;
+	for (int i=0;i<ProjectileSkills::ShotCount(splitRank);++i) {
+		const Vector2 position={spawnPos.x,spawnPos.y+ProjectileSkills::ShotOffset(i)};
+		auto* p = new Projectile(position,{1,0},projectileSpeed,projectileScale,spritePath,homingRank);
+		p->AcquireTarget(targets);
+		if (const auto id=p->TargetId()) targets.push_back(id);
+		projectiles.push_back(p);
+	}
+	GameSfx::Spit();
 	shootTimer = shootCooldown;
 }
 
@@ -410,8 +419,19 @@ void Player::SetHealth(int hp) {
 	health = hp;
 }
 
-void Player::ResetPosition() {
-	pos = { 50.0f, 90.0f };
+void Player::ResetPosition(Vector2 spawn) {
+	SetPosition(spawn);
+	velocity = {0,0};
+	shootTimer = 0;
+	coinShieldActive = coinShieldEnabled;
+	for (auto* projectile:projectiles) delete projectile;
+	projectiles.clear();
+}
+
+void Player::SetPosition(Vector2 position) {
+	pos=position;
+	circleCenter={pos.x+32,pos.y+34};
+	if (currentSprite) currentSprite->SetPosition(pos);
 }
 
 const std::vector<Projectile*>& Player::GetProjectiles() const {

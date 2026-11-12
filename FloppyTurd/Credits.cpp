@@ -9,6 +9,7 @@
 #include <raymath.h>
 #include <random>
 #include <cfloat>
+#include "MobileUi.h"
 
 Credits::Credits(Game* game)
     : textScrollOffset(320.0f + 50.0f), turdletBounce(0.0f), finLogoHovered(false), finLogoScale(1.0f), elapsedTime(0.0f), game(game)
@@ -148,6 +149,28 @@ void Credits::Update(float deltaTime)
 
 void Credits::Draw() const
 {
+    if (RenderLayout::mobile) {
+        using namespace MobileUi;
+        const auto area=Content();
+        const Rectangle list={area.x,area.y+40,area.width,area.height-100};
+        Text(font,"Credits",{area.x,area.y,area.width,30},24,YELLOW);
+        BeginScissorMode((int)(list.x*RenderLayout::Density),(int)(list.y*RenderLayout::Density),
+            (int)(list.width*RenderLayout::Density),(int)(list.height*RenderLayout::Density));
+        const float duration=std::max(10.0f,totalScrollTime);
+        float y=list.y+list.height-(elapsedTime/duration)*(creditEntries.size()*82+list.height);
+        for (const auto& entry : creditEntries) {
+            if (!entry.title.empty()) y=Wrapped(font,entry.title.c_str(),{list.x,y,list.width,30},20,YELLOW);
+            if (!entry.name.empty()) y=Wrapped(font,entry.name.c_str(),{list.x,y,list.width,30},20);
+            y+=18;
+        }
+        EndScissorMode();
+        if (Button("Back",{area.x,area.y+area.height-ButtonHeight,area.width,ButtonHeight})) {
+            AudioManager::GetInstance().StopMusic();
+            if (music) music->Stop();
+            game->SetGameState(Game::MAINMENU);
+        }
+        return;
+    }
     // Draw background via CameraSystem
     cameraSystem->Draw();
 

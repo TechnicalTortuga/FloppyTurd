@@ -10,5 +10,6 @@ public:
     virtual Rectangle GetHitbox() const = 0;
     virtual void TakeDamage() = 0;
     virtual bool ShouldBeRemoved() const = 0;
+    virtual bool IsCombatTarget() const { return true; }
     virtual void SetSpeed(float speed) = 0; // New: Set movement speed
 };

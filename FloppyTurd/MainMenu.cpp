@@ -4,6 +4,7 @@
 #include "AudioManager.h"
 #include "PlatformLayer.h"
 #include "ResourceCompat.h"
+#include "MobileUi.h"
 
 // Enable draw call tracking
 #define ENABLE_DRAW_CALL_TRACKING
@@ -123,6 +124,11 @@ void MainMenu::Update()
 		float scaledY = (float)(logoY + 5);
 
 		Rectangle fRect = { scaledX, scaledY, sw, sh };
+        if (RenderLayout::mobile) {
+            const auto logo = MobileLogoRect();
+            const float scale = logo.width / _FloppyLogo.width;
+            fRect = {logo.x+3*scale, logo.y+5*scale, sw*scale, sh*scale};
+        }
 		bool fHovered = CheckCollisionPointRec(g_AIGUI.mousePos, fRect);
 
 		float targetScale = fHovered ? 1.12f : 1.0f;
@@ -245,6 +251,7 @@ void MainMenu::UpdateLevelUnlocks(int totalCoins, const int sessionRecords[6])
 
 void MainMenu::Draw()
 {
+	if (RenderLayout::mobile) { DrawMobile(); return; }
 	using namespace GameSettings;
 
 	DrawCallTracker::TrackDrawTexturePro(_MenuBackground,
@@ -296,8 +303,10 @@ void MainMenu::Draw()
 		}
 		buttonY += buttonH + spacingY;
 
+#ifndef __EMSCRIPTEN__
 		if (AIGUI_ButtonRounded("Exit", buttonX, buttonY, buttonW, buttonH, cornerRadius, 20, BLACK))
 			game->SetGameState(game->SHUTDOWN);
+#endif
 
 		float creditsBtnX = 6.0f;          // a little padding from the left edge
 		float creditsBtnY = 180.0f - 22.0f; // 2 px above bottom edge
@@ -553,6 +562,99 @@ void MainMenu::Draw()
 	}
 
 	UseHighDefFont(false);
+}
+
+Rectangle MainMenu::MobileLogoRect() const {
+    const auto area = MobileUi::Content();
+    const bool wide = area.width > area.height * 1.3f;
+    Rectangle space = wide ? Rectangle{area.x,area.y+12,area.width*0.47f,area.height-24}
+        : Rectangle{area.x,area.y+8,area.width,std::max(24.0f,std::min(150.0f,area.height-(4*MobileUi::ButtonHeight+5*MobileUi::Gap)))};
+    return MobileUi::Fit(_FloppyLogo, space);
+}
+
+void MainMenu::DrawMobile() {
+    using namespace MobileUi;
+    DrawAsset(_MenuBackground, {0,0,RenderLayout::surfaceWidth,RenderLayout::surfaceHeight});
+    const auto area = Content();
+    const bool wide = area.width > area.height * 1.3f;
+    const Font font = game->GetScaledFont(1.2f);
+    if (currentMenu == MAIN_MENU) {
+        const auto logo = MobileLogoRect();
+        DrawAsset(_FloppyLogo, logo);
+        const float logoScale = logo.width / _FloppyLogo.width;
+        DrawAsset(finLogo, {logo.x+3*logoScale,logo.y+5*logoScale,28*logoScale*fHoverScale,40*logoScale*fHoverScale});
+        const float width = std::min(280.0f, wide ? area.width*0.45f : area.width*0.86f);
+        const float x = wide ? area.x+area.width*0.75f-width/2 : area.x+(area.width-width)/2;
+        const float stackHeight = ButtonHeight*4 + Gap*3;
+        const float lift=wide ? 0 : std::min(24.0f/RenderLayout::cssScale,std::max(0.0f,area.height-stackHeight-180));
+        float y = wide ? area.y+(area.height-stackHeight)/2 : area.y+area.height-stackHeight-lift;
+        if (Button("Play",{x,y,width,ButtonHeight})) currentMenu = LEVEL_SELECT;
+        y += ButtonHeight+Gap;
+        if (Button("Options",{x,y,width,ButtonHeight})) currentMenu = OPTIONS_MENU;
+        y += ButtonHeight+Gap;
+        if (Button("Quickplay",{x,y,width,ButtonHeight})) {
+            game->SetGameState(Game::PLAYING);
+            game->playing->SetCurrentLevel(quickplaySettings.levelIndex);
+        }
+        y += ButtonHeight+Gap;
+        if (Button("Credits",{x,y,width,ButtonHeight})) {
+            AudioManager::GetInstance().StopMusic();
+            game->SetGameState(Game::CREDITS);
+        }
+        return;
+    }
+    if (currentMenu == LEVEL_SELECT) {
+        const bool compact=!wide && area.height<360;
+        const float headerHeight=compact ? 44.0f : 54.0f;
+        const float panelHeight=compact ? 3*ButtonHeight+2*Gap+48 : 222.0f;
+        Wrapped(font,levelNames[currentLevelIndex],{area.x,area.y,area.width,56},compact ? 18 : 20,BLACK);
+        const Rectangle paintingArea = wide
+            ? Rectangle{area.x,area.y+42,area.width*0.44f,area.height-42}
+            : Rectangle{area.x,area.y+headerHeight,area.width,std::max(32.0f,area.height-panelHeight-headerHeight-8)};
+        const auto painting = Fit(levelPaintings[currentLevelIndex],paintingArea);
+        DrawAsset(levelPaintings[currentLevelIndex],painting);
+        if (!levelsUnlocked[currentLevelIndex]) DrawAsset(lockedPainting,painting);
+        const float width = wide ? std::min(300.0f,area.width*0.48f) : area.width;
+        const float x = wide ? area.x+area.width-width : area.x;
+        const float bottom = area.y+area.height;
+        const float y = bottom-panelHeight;
+        const int coins = game->playing->GetTotalCoins();
+        Text(font,TextFormat("Coins: %d",coins),{x,y,width,compact ? 22.0f : 26.0f},compact ? 18 : 20,BLACK);
+        if (levelsUnlocked[currentLevelIndex]) {
+            Text(font,TextFormat("Best: %d pipes",game->playing->GetSessionRecord(currentLevelIndex)),{x,y+(compact ? 24 : 28),width,22},18,BLACK);
+            if (Button("Play this level",{x,y+(compact ? 50 : 60),width,ButtonHeight})) {
+                game->SetGameState(Game::PLAYING);
+                game->playing->SetCurrentLevel(currentLevelIndex);
+            }
+        } else {
+            const int costs[] = {0,0,100,250,500,1000};
+            const int requiredPipes = currentLevelIndex ? 50 : 0;
+            const int previousPipes = currentLevelIndex ? game->playing->GetSessionRecord(currentLevelIndex-1) : 0;
+            Text(font,TextFormat("Previous pipes: %d/%d",previousPipes,requiredPipes),{x,y+(compact ? 24 : 28),width,22},18,BLACK);
+            int records[6]; for (int i=0;i<6;++i) records[i]=game->playing->GetSessionRecord(i);
+            const bool available = CanPurchaseLevel(currentLevelIndex,coins,records);
+            const char* label = available ? TextFormat("Unlock: %d coins",costs[currentLevelIndex]) : TextFormat("Locked: %d coins",costs[currentLevelIndex]);
+            if (Button(label,{x,y+(compact ? 50 : 60),width,ButtonHeight},18) && available) {
+                if (PurchaseLevel(currentLevelIndex)) PlayRandomFartSound();
+            }
+        }
+        const float navY=compact ? bottom-2*ButtonHeight-Gap : bottom-108;
+        if (Button("Previous",{x,navY,(width-Gap)/2,ButtonHeight},18) && currentLevelIndex>0) --currentLevelIndex;
+        if (Button("Next",{x+(width+Gap)/2,navY,(width-Gap)/2,ButtonHeight},18) && currentLevelIndex<5) ++currentLevelIndex;
+        if (Button("Back",{x,bottom-ButtonHeight,width,ButtonHeight})) currentMenu = MAIN_MENU;
+        return;
+    }
+    Text(font,"Options",{area.x,area.y,area.width,30},24,BLACK);
+    const float width = std::min(280.0f,wide ? area.width*0.45f : area.width);
+    const float x = wide ? area.x : area.x+(area.width-width)/2;
+    Audio(font,{x,area.y+32,width,148});
+    const float difficultyX = wide ? area.x+area.width-width : x;
+    const float difficultyY = wide ? area.y+46 : area.y+184;
+    Text(font,"Difficulty",{difficultyX,difficultyY,width,26},20,BLACK);
+    if (Button("<",{difficultyX,difficultyY+30,44,ButtonHeight})) difficultyIndex=(difficultyIndex+2)%3;
+    Text(font,difficultyLevels[difficultyIndex],{difficultyX+48,difficultyY+30,width-96,ButtonHeight},20,BLACK);
+    if (Button(">",{difficultyX+width-44,difficultyY+30,44,ButtonHeight})) difficultyIndex=(difficultyIndex+1)%3;
+    if (Button("Back",{difficultyX,area.y+area.height-ButtonHeight,width,ButtonHeight})) currentMenu = MAIN_MENU;
 }
 
 void MainMenu::ResetMusic()

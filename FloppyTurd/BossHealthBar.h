@@ -10,6 +10,7 @@ public:
     ~BossHealthBar();
 
     void Draw();
+    void DrawAt(Vector2 position,float scale,int nameSize=10);
     void Update(float deltaTime);
 
 private:

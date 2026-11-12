@@ -2,6 +2,7 @@
 #include "ResourceCompat.h"
 #include "GameSettings.h"
 #include <raymath.h>
+#include <cmath>
 
 
 BossHealthBar::BossHealthBar(std::shared_ptr<Boss> boss, const char* bossName)
@@ -23,9 +24,15 @@ BossHealthBar::~BossHealthBar()
 
 void BossHealthBar::Draw()
 {
+    DrawAt(position,1);
+}
+
+void BossHealthBar::DrawAt(Vector2 position,float scale,int nameSize)
+{
     if (auto bossPtr = boss.lock()) // Only draw if boss is valid
     {
-        DrawTexture(frameTexture, (int)position.x, (int)position.y, WHITE);
+        DrawTexturePro(frameTexture,{0,0,(float)frameTexture.width,(float)frameTexture.height},
+            {position.x,position.y,frameTexture.width*scale,frameTexture.height*scale},{0,0},0,WHITE);
 
         float healthPercent = (float)bossPtr->health / 200.0f;
         int healthPixelWidth = (int)(originalWidth * healthPercent);
@@ -50,10 +57,10 @@ void BossHealthBar::Draw()
                 float alphaPulse = Clamp((hurtFadeTimer / HURT_FADE_DURATION), 0.0f, 1.0f);
                 Color hurtColor = { 255, 255, 255, (unsigned char)(alphaPulse * 255) };
 
-                DrawTextureRec(
+                DrawTexturePro(
                     hurtTexture,
                     { 0, 0, (float)fullShadowWidth, (float)originalHeight },
-                    { position.x, position.y },
+                    {position.x,position.y,fullShadowWidth*scale,originalHeight*scale},{0,0},0,
                     hurtColor
                 );
             }
@@ -61,14 +68,14 @@ void BossHealthBar::Draw()
 
         if (healthPixelWidth > 0)
         {
-            DrawTextureRec(healthTexture,
+            DrawTexturePro(healthTexture,
                 { 0, 0, (float)healthPixelWidth, (float)originalHeight },
-                { position.x, position.y },
+                {position.x,position.y,healthPixelWidth*scale,originalHeight*scale},{0,0},0,
                 barColor);
         }
 
         // Draw name label under the health bar
-        DrawText(_bossName, (int)position.x + 10, (int)position.y + 25, 10, GOLD);
+        DrawText(_bossName,(int)(position.x+10*scale),(int)(position.y+25*scale),(int)std::round(nameSize*scale),GOLD);
     }
 }
 

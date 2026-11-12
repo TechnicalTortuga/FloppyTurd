@@ -19,6 +19,9 @@
 #include <cmath>
 #include "RenderLayout.h"
 #include "PixelFont.h"
+#include "MobileUi.h"
+#include "ProjectileSkills.h"
+#include "GameSfx.h"
 
 Playing::Playing(Game* game) {
     using namespace Resources;
@@ -58,7 +61,7 @@ Playing::Playing(Game* game) {
     InitializeHats();
 
     // Sync loaded states with game objects
-    for (int i = 0; i < totalSkills; ++i) {
+    for (int i = 0; i < 6; ++i) {
         skillUnlocked[i] = stats.skillUnlocked[i];
         if (skillUnlocked[i]) {
             switch (i) {
@@ -74,6 +77,7 @@ Playing::Playing(Game* game) {
             }
         }
     }
+    player->SetProjectileSkills(stats.homingRank,stats.splitRank);
     for (int i = 0; i < 15; ++i) {
         if (i < hats.size() && stats.hatUnlocked[i]) {
             hats[i]->status = UNLOCKED;
@@ -193,7 +197,9 @@ void Playing::InitializeSkillNodes() {
 }
 
 bool Playing::PurchaseItem(int cost) {
-    return player->SpendCoins(cost);
+    const bool bought=player->SpendCoins(cost);
+    GameSfx::Play(bought ? "kaching" : "denied");
+    return bought;
 }
 
 void Playing::TriggerSaveIfPending() {
@@ -205,12 +211,21 @@ void Playing::TriggerSaveIfPending() {
 }
 
 void Playing::UnlockSkill(int idx) {
-    if (idx < 0 || idx >= totalSkills || skillUnlocked[idx]) return;
-    // Enforce dependency: Heart Thirds (index 4) requires Heart Halves (index 1)
-    if (idx == 4 && !skillUnlocked[1]) return;
+    if (idx < 0 || idx >= totalSkills || SkillCost(idx)==0) return;
+    if (!SkillPrerequisite(idx)) { GameSfx::Play("denied"); return; }
+    if (idx>=6) {
+        auto& rank=idx==6 ? stats.homingRank : stats.splitRank;
+        const auto kind=idx==6 ? ProjectileSkills::Kind::Homing : ProjectileSkills::Kind::Split;
+        if (ProjectileSkills::Upgrade(kind,rank,player->CanShoot(),[this](int cost){return PurchaseItem(cost);})) {
+            player->SetProjectileSkills(stats.homingRank,stats.splitRank);
+            savePending=true;
+        }
+        return;
+    }
     if (PurchaseItem(skillCosts[idx])) {
         skillUnlocked[idx] = true;
         stats.skillUnlocked[idx] = true;
+        savePending=true;
         switch (idx) {
         case 0: 
             player->EnableShooting(true); 
@@ -223,6 +238,30 @@ void Playing::UnlockSkill(int idx) {
         case 5: player->EnableCoinShield(true); break;
         }
     }
+}
+
+int Playing::SkillRank(int index) const {
+    if (index>=0 && index<6) return skillUnlocked[index] ? 1 : 0;
+    return index==6 ? stats.homingRank : index==7 ? stats.splitRank : 0;
+}
+int Playing::SkillCost(int index) const {
+    if (index<0 || index>=totalSkills) return 0;
+    if (index<6) return skillUnlocked[index] ? 0 : skillCosts[index];
+    return ProjectileSkills::NextCost(index==6 ? ProjectileSkills::Kind::Homing : ProjectileSkills::Kind::Split,SkillRank(index));
+}
+bool Playing::SkillPrerequisite(int index) const {
+    if (index==4) return skillUnlocked[1];
+    return index<6 || player->CanShoot();
+}
+const char* Playing::SkillTitle(int index) const {
+    return index<6 ? skillNames[index] : TextFormat("%s (%d/2)",skillNames[index],SkillRank(index));
+}
+const char* Playing::SkillPurchaseLabel(int index) const {
+    const int cost=SkillCost(index);
+    if (!cost) return index<6 ? "Unlocked" : "Max rank";
+    if (!SkillPrerequisite(index)) return index==4 ? "Requires half hearts" : "Requires Turd Shot";
+    if (TOTALCOINS<cost) return TextFormat("Need %d coins",cost);
+    return TextFormat(index>=6 && SkillRank(index)>0 ? "Upgrade: %d coins" : "Buy: %d coins",cost);
 }
 
 void Playing::OutputHatMenu() {
@@ -338,7 +377,128 @@ void Playing::OutputHatMenu() {
     }
 }
 
+void Playing::ReturnToMenu() {
+    if (!gameOverTriggered) UpdateSessionRecord(savedLevelIndex,SCORE);
+    stats.totalCoins = TOTALCOINS;
+    savePending = true;
+    if (game->mainMenu) {
+        game->mainMenu->UpdateLevelUnlocks(TOTALCOINS,sessionRecords);
+        game->mainMenu->ResetMusic();
+    }
+    AudioManager::GetInstance().StopMusic();
+    if (currentMusic) currentMusic->Stop();
+    player->Revive(); SCORE=0; player->ResetSessionCoins();
+    GAMEOVER=false; gameOverTriggered=false; turdHasFallenOffScreen=false;
+    isPaused=false; CancelTouchInput();
+    TriggerSaveIfPending();
+    game->SetGameState(Game::MAINMENU);
+}
+
+void Playing::RetryLevel() {
+    AudioManager::GetInstance().StopMusic();
+    if (gameOverMusic) gameOverMusic->Stop();
+    SetCurrentLevel(savedLevelIndex);
+    player->Revive(); SCORE=0;
+    ApplyPlayerSpawn();
+    GAMEOVER=false; gameOverTriggered=false; turdHasFallenOffScreen=false;
+    stats.totalLevelTries++;
+    CancelTouchInput();
+}
+
+void Playing::LeaveGameOver() {
+    AudioManager::GetInstance().StopMusic();
+    if (gameOverMusic) gameOverMusic->Stop();
+    player->Revive(); SCORE=0;
+    GAMEOVER=false; gameOverTriggered=false; turdHasFallenOffScreen=false;
+    if (game->mainMenu) game->mainMenu->ResetMusic();
+    CancelTouchInput(); game->SetGameState(Game::MAINMENU);
+}
+
+void Playing::DrawMobilePause() {
+    using namespace MobileUi;
+    auto area=Content();
+    if (area.width>640) { area.x+=(area.width-640)/2; area.width=640; }
+    DrawRectangleRec({area.x-6,area.y-6,area.width+12,area.height+12},Fade(BLACK,0.94f));
+    const Font font=game->GetScaledFont(1.2f);
+    const char* labels[]={"System","Stats","Hats","Skills"};
+    const float tabWidth=(area.width-3*Gap)/4;
+    for (int i=0;i<4;++i) {
+        if (Button(labels[i],{area.x+i*(tabWidth+Gap),area.y,tabWidth,ButtonHeight},16)) currentTab=(PauseMenuTab)i;
+    }
+    Rectangle body={area.x,area.y+ButtonHeight+Gap,area.width,area.height-2*(ButtonHeight+Gap)};
+    if (currentTab==SYSTEM) {
+        const float width=body.height<2*(ButtonHeight+28) ? body.width : std::min(280.0f,body.width);
+        Audio(font,{body.x+(body.width-width)/2,body.y,width,body.height});
+    } else if (currentTab==STATS) {
+        const char* labelsLeft[]={"Pipes","Coins","Enemies","Jumps","Flops","Level tries"};
+        const int values[]={stats.totalPipes,stats.totalCoins,stats.totalEnemiesKilled,stats.totalJumps,stats.totalFlops,stats.totalLevelTries};
+        const float rowHeight=std::min(30.0f,body.height/6);
+        for (int i=0;i<6;++i) {
+            Text(font,TextFormat("%s: %d",labelsLeft[i],values[i]),{body.x,body.y+i*rowHeight,body.width*0.5f,rowHeight},18);
+            Text(font,TextFormat("Level %d: %d",i+1,stats.levelHighScores[i]),{body.x+body.width*0.5f,body.y+i*rowHeight,body.width*0.5f,rowHeight},18);
+        }
+    } else if (currentTab==HATS && !hats.empty()) {
+        mobileSelectedHat=std::clamp(mobileSelectedHat,0,(int)hats.size()-1);
+        auto* hat=hats[mobileSelectedHat];
+        const bool compact=body.height<154;
+        const float width=compact ? (body.width-Gap)/2 : body.width;
+        const float controlsX=compact ? body.x+width+Gap : body.x;
+        const float arrowY=compact ? body.y : body.y+32;
+        Text(font,hat->name.c_str(),{body.x,body.y,width,28},20,YELLOW);
+        if (Button("<",{controlsX,arrowY,52,ButtonHeight})) mobileSelectedHat=(mobileSelectedHat+(int)hats.size()-1)%(int)hats.size();
+        if (Button(">",{controlsX+width-52,arrowY,52,ButtonHeight})) mobileSelectedHat=(mobileSelectedHat+1)%(int)hats.size();
+        hat=hats[mobileSelectedHat];
+        if (hat->icon.id) DrawAsset(hat->icon,Fit(hat->icon,{body.x+width/2-30,body.y+30,60,48}));
+        const int cost=mobileSelectedHat<5 ? 100 : mobileSelectedHat<10 ? 200 : 300;
+        Text(font,TextFormat("Coins: %d",TOTALCOINS),{body.x,body.y+80,width,24},18);
+        const bool owned=hat->status==UNLOCKED;
+        const char* label=owned ? (currentSelectedHat==hat ? "Unequip" : "Equip") : TextFormat(TOTALCOINS<cost ? "Need %d coins" : "Buy: %d coins",cost);
+        if (Button(label,{controlsX,compact ? body.y+ButtonHeight+Gap : body.y+108,width,ButtonHeight},18)) {
+            if (owned) { currentSelectedHat=currentSelectedHat==hat ? nullptr : hat; player->SetHat(currentSelectedHat); }
+            else if (PurchaseItem(cost)) {
+                hat->status=UNLOCKED; stats.hatUnlocked[mobileSelectedHat]=true;
+                currentSelectedHat=hat; player->SetHat(hat); savePending=true;
+            }
+        }
+    } else if (currentTab==SKILLS) {
+        const bool wide=body.width>500 || body.height<200;
+        const float textWidth=wide ? body.width*0.55f : body.width;
+        const float titleBottom=Wrapped(font,SkillTitle(selectedSkill),{body.x,body.y,textWidth,60},20,YELLOW);
+        Wrapped(font,selectedSkill==0 ? "Hold Shoot (1 coin per shot)." : skillDescs[selectedSkill],{body.x,titleBottom+6,textWidth,60},16);
+        const float width=wide ? body.width*0.4f : body.width;
+        const float x=wide ? body.x+body.width-width : body.x;
+        const float y=wide ? body.y : body.y+body.height-2*ButtonHeight-Gap;
+        if (Button("Previous",{x,y,(width-Gap)/2,ButtonHeight},16) && selectedSkill>0) --selectedSkill;
+        if (Button("Next",{x+(width+Gap)/2,y,(width-Gap)/2,ButtonHeight},16) && selectedSkill<totalSkills-1) ++selectedSkill;
+        const char* label=SkillPurchaseLabel(selectedSkill);
+        if (Button(label,{x,y+ButtonHeight+Gap,width,ButtonHeight},18)) UnlockSkill(selectedSkill);
+    }
+    const float bottom=area.y+area.height-ButtonHeight;
+    if (Button("Resume",{area.x,bottom,(area.width-Gap)/2,ButtonHeight},18)) { isPaused=false; CancelTouchInput(); }
+    if (Button("Main Menu",{area.x+(area.width+Gap)/2,bottom,(area.width-Gap)/2,ButtonHeight},18)) ReturnToMenu();
+    if (savePending) { stats.Save(); savePending=false; }
+}
+
+void Playing::DrawMobileGameOver() {
+    using namespace MobileUi;
+    const auto area=Content();
+    const Font font=game->GetScaledFont(1.2f);
+    DrawRectangleRec({area.x-6,area.y-6,area.width+12,area.height+12},Fade(BLACK,0.9f));
+    const bool wide=area.width>area.height*1.3f;
+    const float width=std::min(280.0f,wide ? area.width*0.45f : area.width);
+    const float x=wide ? area.x+area.width-width : area.x+(area.width-width)/2;
+    const float y=wide ? area.y : area.y+std::max(0.0f,std::min(std::max(90.0f,area.height*0.28f),area.height-214));
+    const Rectangle art=wide ? Rectangle{area.x,area.y,area.width*0.45f,area.height} : Rectangle{area.x,area.y,area.width,90};
+    DrawAsset(deadFloppy,Fit(deadFloppy,art));
+    Text(font,"Poop happens!",{x,y,width,32},26,YELLOW);
+    Text(font,TextFormat("Pipes: %d",SCORE),{x,y+42,width,28},24);
+    Text(font,TextFormat("Coins: %d",player->GetSessionCoins()),{x,y+76,width,28},24);
+    if (Button("Try Again",{x,y+118,width,ButtonHeight})) RetryLevel();
+    if (Button("Main Menu",{x,y+170,width,ButtonHeight})) LeaveGameOver();
+}
+
 void Playing::DrawPauseMenu() {
+    if (RenderLayout::mobile) { DrawMobilePause(); return; }
     DrawTexturePro(
         pauseMenuBackground,
         Rectangle{ 0, 0, (float)pauseMenuBackground.width, (float)pauseMenuBackground.height },
@@ -440,20 +600,20 @@ void Playing::DrawPauseMenu() {
         Font font = game->GetScaledFont(1.2f);
         float y = skillArea.y + 10;
 
-        DrawTextEx(font, skillNames[selectedSkill], { skillArea.x + 10, y }, 20, 1.0f, YELLOW);
+        DrawTextEx(font, SkillTitle(selectedSkill), { skillArea.x + 10, y }, 20, 1.0f, YELLOW);
         y += 20;
 
         DrawTextEx(font, skillDescs[selectedSkill], { skillArea.x + 10, y }, 18, 1.0f, WHITE);
         y += 36;
 
-        if (skillUnlocked[selectedSkill]) {
-            DrawTextEx(font, "Unlocked", { skillArea.x + 10, y + 5 }, 18, 1.0f, GREEN);
+        if (SkillCost(selectedSkill)==0) {
+            DrawTextEx(font, selectedSkill<6 ? "Unlocked" : "Max rank", { skillArea.x + 10, y + 5 }, 18, 1.0f, GREEN);
         }
         else {
             // Check if Heart Thirds (index 4) is selected and Heart Halves (index 1) is not unlocked
-            bool canPurchase = (selectedSkill != 4 || skillUnlocked[1]);
+            bool canPurchase = SkillPrerequisite(selectedSkill);
             if (canPurchase) {
-                std::string costStr = std::to_string(skillCosts[selectedSkill]);
+                std::string costStr = std::to_string(SkillCost(selectedSkill));
                 float costWidth = MeasureTextEx(font, costStr.c_str(), 18, 1.0f).x;
                 float coinX = skillArea.x + 10;
                 float coinY = y + 5;
@@ -464,16 +624,16 @@ void Playing::DrawPauseMenu() {
                     { 0, 0 }, 0.0f, WHITE
                 );
                 DrawTextEx(font, costStr.c_str(), { coinX + 20, coinY }, 18, 1.0f, WHITE);
-                const char* buttonText = (selectedSkill == 4) ? "Upgrade" : "Buy";
+                const char* buttonText = (selectedSkill == 4 || (selectedSkill>=6 && SkillRank(selectedSkill)>0)) ? "Upgrade" : "Buy";
                 if (AIGUI_ButtonRounded(buttonText, skillArea.x + 10 + costWidth + 30, y + 5, 80, 18, 0.3f, 18, WHITE)) {
                     UnlockSkill(selectedSkill);
                 }
-                if (TOTALCOINS < skillCosts[selectedSkill]) {
+                if (TOTALCOINS < SkillCost(selectedSkill)) {
                     DrawTextEx(font, "Not enough coins!", { skillArea.x + 10, y + 25 }, 18, 1.0f, WHITE);
                 }
             }
             else {
-                DrawTextEx(font, "Requires Heart Halves!", { skillArea.x + 10, y + 5 }, 18, 1.0f, RED);
+                DrawTextEx(font, selectedSkill==4 ? "Requires Heart Halves!" : "Requires Turd Shot!", { skillArea.x + 10, y + 5 }, 18, 1.0f, RED);
             }
         }
         break;
@@ -518,46 +678,7 @@ void Playing::DrawPauseMenu() {
             WHITE,
             nullptr
         )) {
-            auto current = levelManager->GetCurrentLevel();
-            int levelIndex = -1;
-            if (dynamic_cast<ParkLevel*>(current.get())) {
-                levelIndex = 0;
-            }
-            else if (dynamic_cast<SewerLevel*>(current.get())) {
-                levelIndex = 1;
-            }
-            else if (dynamic_cast<DesertLevel*>(current.get())) {
-                levelIndex = 2;
-            }
-            else if (dynamic_cast<SnowLevel*>(current.get())) {
-                levelIndex = 3;
-            }
-            else if (dynamic_cast<CastleLevel*>(current.get())) {
-                levelIndex = 4;
-            }
-            else if (dynamic_cast<BossLevel*>(current.get())) {
-                levelIndex = 5;
-            }
-
-            if (levelIndex >= 0) {
-                UpdateSessionRecord(levelIndex, SCORE);
-            }
-
-            // Pickups already updated TOTALCOINS; finishing a run must not deposit them twice.
-            stats.totalCoins = TOTALCOINS;
-            savePending = true;
-            if (game->mainMenu) {
-                game->mainMenu->UpdateLevelUnlocks(TOTALCOINS, sessionRecords);
-                game->mainMenu->ResetMusic();
-            }
-
-            AudioManager::GetInstance().StopMusic();
-            if (currentMusic) currentMusic->Stop();
-            player->Revive();
-            SCORE = 0;
-            player->ResetSessionCoins();
-            isPaused = false;
-            game->SetGameState(Game::MAINMENU);
+            ReturnToMenu();
         }
 
         AudioManager::GetInstance().DrawAudioOptions(160 - 80, 40);
@@ -572,6 +693,7 @@ void Playing::DrawPauseMenu() {
 }
 
 void Playing::DrawGameOverScreen() {
+    if (RenderLayout::mobile) { DrawMobileGameOver(); return; }
     const float scale = 2.0f;
 
     float panelW = (float)(tryAgainBackground.width * scale);
@@ -612,42 +734,11 @@ void Playing::DrawGameOverScreen() {
     int btnX = (int)(panelX + (panelW - 2 * btnW - spacing) / 2.0f);
 
     if (AIGUI_ButtonRounded("Try Again", (float)btnX, (float)btnY, (float)btnW, (float)btnH, 0.3f, 24, BLACK)) {
-        AudioManager::GetInstance().StopMusic();
-        if (gameOverMusic) gameOverMusic->Stop();
-
-        int levelIndex = 0;
-        switch (lastLevelType) {
-        case LastLevelType::PARK:   levelIndex = 0; break;
-        case LastLevelType::SEWER:  levelIndex = 1; break;
-        case LastLevelType::DESERT: levelIndex = 2; break;
-        case LastLevelType::SNOW:   levelIndex = 3; break;
-        case LastLevelType::CASTLE: levelIndex = 4; break;
-        case LastLevelType::BOSS:   levelIndex = 5; break;
-        default:                    levelIndex = 0; break;
-        }
-
-        SetCurrentLevel(levelIndex);
-        player->Revive();
-        SCORE = 0;
-
-        GAMEOVER = false;
-        gameOverTriggered = false;
-        turdHasFallenOffScreen = false;
-        stats.totalLevelTries++;
+        RetryLevel();
     }
 
     if (AIGUI_ButtonRounded("Quit", (float)(btnX + btnW + spacing), (float)btnY, (float)btnW, (float)btnH, 0.3f, 24, BLACK)) {
-        AudioManager::GetInstance().StopMusic();
-        if (gameOverMusic) gameOverMusic->Stop();
-        player->Revive();
-        SCORE = 0;
-
-        GAMEOVER = false;
-        gameOverTriggered = false;
-        turdHasFallenOffScreen = false;
-
-        if (game->mainMenu) game->mainMenu->ResetMusic();
-        game->SetGameState(Game::MAINMENU);
+        LeaveGameOver();
     }
 
     float sbScale = 2.0f;
@@ -864,7 +955,7 @@ void Playing::Update() {
             bool projectileHit = false;
 
             for (auto enemyIt = enemies.begin(); enemyIt != enemies.end(); ++enemyIt) {
-                if (CheckCollisionRecs(projHitbox, (*enemyIt)->GetHitbox())) {
+                if ((*enemyIt)->IsCombatTarget() && CheckCollisionRecs(projHitbox, (*enemyIt)->GetHitbox())) {
                     projectileHit = true;
                     (*enemyIt)->TakeDamage();
                     IncrementEnemiesKilled();
@@ -931,6 +1022,11 @@ void Playing::Draw() {
     if (pendingLevel >= 0) { DrawLevelLoading(); return; }
     if (!levelManager) return;
     BeginMode2D(RenderLayout::WorldCamera());
+    if (RenderLayout::mobile || GameSettings::PortraitArena) {
+        const auto clip=RenderLayout::WorldClip();
+        BeginScissorMode((int)std::round(clip.x),(int)std::round(clip.y),
+            (int)std::round(clip.width),(int)std::round(clip.height));
+    }
     if (levelManager) {
         levelManager->Draw();
     }
@@ -945,11 +1041,13 @@ void Playing::Draw() {
         snowOverlay->Draw();
 
     // The HUD uses the full viewport; modal panels use a smaller centered canvas.
-    if (!GAMEOVER) { UseHighDefFont(true); DrawUI(); UseHighDefFont(false); }
+    if (!GAMEOVER && !RenderLayout::mobile && !GameSettings::PortraitArena) { UseHighDefFont(true); DrawUI(); UseHighDefFont(false); }
+    if (RenderLayout::mobile || GameSettings::PortraitArena) EndScissorMode();
     EndMode2D();
     AIGUI_SetRenderCamera(RenderLayout::UiCamera(true));
     BeginMode2D(RenderLayout::UiCamera(true));
     RenderLayout::EndCameraOnExit endUi;
+    if (!GAMEOVER && (RenderLayout::mobile || GameSettings::PortraitArena)) DrawMobileHUD();
     if (GAMEOVER) {
         DrawGameOverScreen();
         return;
@@ -972,7 +1070,11 @@ void Playing::Draw() {
             std::shared_ptr<Boss> boss = bossLevel->GetBoss();
             if (boss && boss->isActive && bossHealthBar) {
                 bossHealthBar->Update(GetFrameTime());
-                bossHealthBar->Draw();
+                if (RenderLayout::mobile) {
+                    const auto safe=RenderLayout::SafeRect();
+                    const float scale=1/RenderLayout::cssScale;
+                    bossHealthBar->DrawAt({safe.x+(safe.width-160*scale)/2,safe.y+8},scale,12);
+                } else bossHealthBar->Draw();
             }
         }
     }
@@ -1032,6 +1134,7 @@ void Playing::UpdateMusic() {
 }
 
 void Playing::TouchAction(int action, bool down) {
+    if (action==4 && down) { ReturnToMenu(); return; }
     if (action == 0 && down && !isPaused && !GAMEOVER) pendingTouchJump = true;
     else if (action == 1) heldTouchShoot = down;
     else if (action == 2 && down && !GAMEOVER) pendingTouchPause = true;
@@ -1152,6 +1255,22 @@ void Playing::DrawLevelLoading() {
     BeginMode2D(RenderLayout::UiCamera());
     RenderLayout::EndCameraOnExit endUi;
     const char* title = levelLoadFailed ? "Couldn't load this level" : "Loading level...";
+    if (RenderLayout::mobile) {
+        using namespace MobileUi;
+        const auto area=Content();
+        const Font font=game->GetScaledFont(1.2f);
+        const float width=std::min(280.0f,area.width), x=area.x+(area.width-width)/2;
+        const float y=area.y+(area.height-180)/2;
+        Wrapped(font,title,{x,y,width,60},22);
+        Wrapped(font,levelLoadFailed ? "Check your connection and retry." : "Preparing scenery and enemies",{x,y+62,width,60},18);
+        if (levelLoadFailed && Button("Retry",{x,y+126,(width-Gap)/2,ButtonHeight})) {
+            WebAssets::RetryLevel(pendingLevel); levelLoadFailed=false;
+        }
+        if (Button("Back",{x+(width+Gap)/2,y+126,(width-Gap)/2,ButtonHeight})) {
+            pendingLevel=-1; game->SetGameState(Game::MAINMENU);
+        }
+        return;
+    }
     DrawPixelTextCentered(g_AIGUI.defaultFont, title, {10,50,300,28}, 18, 1, WHITE);
     DrawPixelTextCentered(g_AIGUI.defaultFont, levelLoadFailed ? "Check your connection and retry." : "Preparing scenery and enemies", {10,82,300,20}, 12, 1, WHITE);
     if (levelLoadFailed && AIGUI_ButtonRounded("Retry", 55,112,95,28,0.2f,16,BLACK)) {
@@ -1165,6 +1284,9 @@ void Playing::DrawLevelLoading() {
 }
 
 void Playing::CompleteLevelLoad(int levelIndex) {
+    savedLevelIndex = levelIndex;
+    mobileRun=game->IsTouchPresentation();
+    GameSettings::SelectArena(mobileRun && levelIndex!=5);
 
     std::shared_ptr<Level> newLevel;
     switch (levelIndex) {
@@ -1210,6 +1332,7 @@ void Playing::CompleteLevelLoad(int levelIndex) {
     }
 
     player->ResetPosition();
+    ApplyPlayerSpawn();
     if (newLevel->GetAudioClip()) {
         PlayMusic(newLevel->GetAudioClip());
     }
@@ -1219,6 +1342,38 @@ void Playing::CompleteLevelLoad(int levelIndex) {
     isPaused = false;
     SCORE = 0;
     player->ResetSessionCoins();
+}
+
+void Playing::ApplyPlayerSpawn() {
+    if (GameSettings::PortraitArena) player->SetPosition({GameSettings::GameWidth*0.05f,GameSettings::GameHeight*0.30f-34});
+}
+
+void Playing::DrawMobileHUD() {
+    using namespace MobileUi;
+    using namespace Resources;
+    const auto safe=RenderLayout::SafeRect();
+    const Font font=game->GetScaledFont(1);
+    const float x=safe.x+8, y=safe.y+8;
+    const int hearts=player->GetTotalHearts(), slices=player->GetSlicesPerHeart();
+    for (int i=0;i<hearts;++i) {
+        const int live=std::clamp(player->GetSlicesLeft()-i*slices,0,slices);
+        const int ghost=std::clamp(player->GetGhostSlicesLeft()-std::max(0,i*slices-player->GetSlicesLeft()),0,slices-live);
+        if (!live && !ghost) continue;
+        const char* path=TurdHeart0ThirdHollow;
+        if (slices==1) path=live ? TurdHeartSmall : TurdHeart0HalfHollow;
+        else if (slices==2) path=live==2 ? TurdHeartSmall : live==1 ? TurdHeart1Half : ghost ? TurdHeart0HalfHollow : TurdHeart0Half;
+        else path=live==3 ? TurdHeartSmall : live==2 ? TurdHeart2Thirds : live==1 ? TurdHeart1Third : TurdHeart0ThirdHollow;
+        DrawAsset(TextureCache::Get(path),{x+(i%4)*22,y+(i/4)*22,20,20});
+    }
+    const int visibleHearts=(player->GetSlicesLeft()+player->GetGhostSlicesLeft()+slices-1)/slices;
+    const float coinsY=y+std::max(1,(visibleHearts+3)/4)*22+4;
+    DrawAsset(_CoinBag,{x,coinsY,18,18});
+    Text(font,TextFormat("%d",player->GetSessionCoins()),{x+22,coinsY,60,20},18);
+    if (savedLevelIndex!=5) {
+        const Rectangle counter={safe.x+safe.width-82,y,74,32};
+        DrawRectangleRec(counter,Fade(BLACK,0.65f));
+        Text(font,TextFormat("%d",SCORE),counter,24);
+    }
 }
 
 void Playing::DrawUI() {

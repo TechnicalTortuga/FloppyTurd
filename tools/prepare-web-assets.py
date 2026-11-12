@@ -10,11 +10,11 @@ import shutil
 # Every level's transitive scenery, obstacle and enemy dependencies live together.
 LEVEL_PATTERNS = [
     ['environment/Level1*.png'],
-    ['environment/*[Ss]ewer*.png', 'environment/*PipeWide*.png', 'objects/Janitor*.png', 'enemies/Toilet*.png', 'enemies/toiletpaper*.png'],
-    ['environment/Level3*.png', 'environment/Cacti.png', 'environment/dancing*.png', 'environment/Outhouse*.png', 'objects/Cacti*.png', 'objects/BrickWall.png', 'enemies/Bird*.png'],
+    ['environment/*[Ss]ewer*.png', 'environment/*PipeWide*.png', 'objects/Janitor*.png', 'enemies/Toilet*.png', 'enemies/toiletpaper*.png', 'sounds/ios/tpkill.mp3'],
+    ['environment/Level3*.png', 'environment/Cacti.png', 'environment/dancing*.png', 'environment/Outhouse*.png', 'objects/Cacti*.png', 'objects/BrickWall.png', 'enemies/Bird*.png', 'sounds/ios/birdkill.mp3'],
     ['environment/Snow*.png', 'environment/snow*.png', 'environment/*ToiletSnow.png', 'enemies/Snow*.png', 'objects/Snowball.png'],
-    ['environment/castle*.png', 'environment/curtains.png', 'environment/*ToiletGold*.png', 'environment/TorchPillar.png', 'objects/*Painting.png', 'objects/SpikeBall*.png', 'enemies/RatCopter*.png'],
-    ['environment/Boss*.png', 'environment/bosspillar.png', 'environment/ratkingbackground.png', 'environment/darkclouds.png', 'environment/screenCurtains.png', 'enemies/Ratking*.png', 'enemies/RatCopter*.png', 'enemies/Toilet*.png', 'enemies/toiletpaper*.png', 'music/BossBeatv2.mp3'],
+    ['environment/castle*.png', 'environment/curtains.png', 'environment/*ToiletGold*.png', 'environment/TorchPillar.png', 'objects/*Painting.png', 'objects/SpikeBall*.png', 'enemies/RatCopter*.png', 'sounds/ios/ratkill.mp3'],
+    ['environment/Boss*.png', 'environment/bosspillar.png', 'environment/ratkingbackground.png', 'environment/darkclouds.png', 'environment/screenCurtains.png', 'enemies/Ratking*.png', 'enemies/RatCopter*.png', 'enemies/Toilet*.png', 'enemies/toiletpaper*.png', 'music/BossBeatv2.mp3', 'sounds/ios/ratkill.mp3', 'sounds/ios/ratkinghurt.mp3', 'sounds/ios/tpkill.mp3'],
 ]
 
 def prepare(source, output):

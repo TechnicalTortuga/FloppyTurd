@@ -1,0 +1,131 @@
+{
+  "referenceRepository": "https://github.com/TechnicalTortuga/FloppyTurd",
+  "referenceCommit": "ea665c2f220ea50f52636ec862cfbe3fe30c7f00",
+  "scope": "First iOS gameplay port: short sound clips, two ranked projectile skills, enemy defeat safety and bird hover behavior; snowmen remain noncombatants while snowballs remain hazards",
+  "sourceReferences": {
+    "rankDefinitions": "src/FloppyTurd/Systems/SkillSystem.cpp:33",
+    "homingConesAndStrength": "src/FloppyTurd/Systems/SkillSystem.cpp:267",
+    "homingSteering": "src/FloppyTurd/Systems/ProjectileSystem.cpp:795",
+    "parallelSplitSpacing": "src/FloppyTurd/Systems/ProjectileSystem.cpp:905",
+    "randomSpit": "src/FloppyTurd/Systems/PlayerControllerSystem.cpp:921",
+    "enemyKillAudio": "src/FloppyTurd/Systems/EnemySystem.cpp:1800",
+    "birdHover": "src/FloppyTurd/Config/EnemyConfigs.cpp:131",
+    "noncombatantSnowmen": "src/FloppyTurd/States/GameplayState.cpp:3525"
+  },
+  "normalization": {
+    "nativePixelsPerLogicalPixel": 8,
+    "splitSpacingLogical": 15,
+    "homingDistanceLogical": 100,
+    "homingDeadZoneLogical": 2.5,
+    "homingConesDegrees": [
+      20,
+      40
+    ],
+    "homingBaseStrength": [
+      6,
+      10
+    ],
+    "homingRankCosts": [
+      300,
+      700
+    ],
+    "splitRankCosts": [
+      200,
+      400
+    ]
+  },
+  "preserved": [
+    "Existing six paid skills and unlock flags",
+    "One session coin per shooting trigger regardless of projectile count",
+    "Immediate jump and independent touch pointers",
+    "Legacy v1/v2 progress plus a v2 rollback shadow"
+  ],
+  "saveMigration": {
+    "canonicalFile": "floppy_turd_stats_v3.bin",
+    "canonicalKey": "floppy-turd-save-v3",
+    "canonicalBytes": 81,
+    "legacyFile": "floppy_turd_stats.bin",
+    "legacyKey": "floppy-turd-save-v2",
+    "legacyBytes": 79,
+    "note": "Valid v3 owns new ranks; edits made only by an older client after migration are not automatically merged into v3."
+  },
+  "soundAssets": [
+    {
+      "source": "ui/denied.mp3",
+      "destination": "FloppyTurd/resources/sounds/ios/denied.mp3",
+      "bytes": 18239,
+      "sha256": "05131d905515044499e3bf3441c46a198fc27f5800029c26def02f9d382f364c"
+    },
+    {
+      "source": "gameplay/enemies/birdkill.mp3",
+      "destination": "FloppyTurd/resources/sounds/ios/birdkill.mp3",
+      "bytes": 6882,
+      "sha256": "98374ca36dcdc5b433ddf2a10e073dc1b464eb445a629e858a7f7329a280f796"
+    },
+    {
+      "source": "gameplay/enemies/ratkill.mp3",
+      "destination": "FloppyTurd/resources/sounds/ios/ratkill.mp3",
+      "bytes": 35166,
+      "sha256": "6a6ba1463f3e935535c6d94032ee6ebdec7ed0ac543aafbcb51b103574268eae"
+    },
+    {
+      "source": "gameplay/enemies/ratkinghurt.mp3",
+      "destination": "FloppyTurd/resources/sounds/ios/ratkinghurt.mp3",
+      "bytes": 55855,
+      "sha256": "aeacb661c7895716706ce832276f052b348338f6015634509bcc9e3ef734b906"
+    },
+    {
+      "source": "gameplay/enemies/tpkill.mp3",
+      "destination": "FloppyTurd/resources/sounds/ios/tpkill.mp3",
+      "bytes": 35166,
+      "sha256": "18cc6064db168132390b07739ac33e77b41b71ab40d3738247865a76b24ebfb5"
+    },
+    {
+      "source": "gameplay/misc/kaching.mp3",
+      "destination": "FloppyTurd/resources/sounds/ios/kaching.mp3",
+      "bytes": 35108,
+      "sha256": "0e2867b340680619862fbdbd21c00b552a0a40a438b32bbabad8467d4e374723"
+    },
+    {
+      "source": "gameplay/player/spit1.mp3",
+      "destination": "FloppyTurd/resources/sounds/ios/spit1.mp3",
+      "bytes": 7982,
+      "sha256": "28fbfdb817b03a7d64ce60f9626ce861902327535671c16a730a86f77e1a9cfc"
+    },
+    {
+      "source": "gameplay/player/spit2.mp3",
+      "destination": "FloppyTurd/resources/sounds/ios/spit2.mp3",
+      "bytes": 7721,
+      "sha256": "d7d47a35c6f196e1e380eeb2a8b3f3a9ac2b9f2955de19e01a093ac827e5c45d"
+    },
+    {
+      "source": "gameplay/player/spit3.mp3",
+      "destination": "FloppyTurd/resources/sounds/ios/spit3.mp3",
+      "bytes": 5269,
+      "sha256": "571981f6deb49cbc367156e9d59367502ad2d600cd9cedcfab94cf80efb058de"
+    },
+    {
+      "source": "gameplay/player/spit4.mp3",
+      "destination": "FloppyTurd/resources/sounds/ios/spit4.mp3",
+      "bytes": 5268,
+      "sha256": "a44fc95131fa781bf7b455a95133ce0376b8874bd0fa873f4bcae655da53d551"
+    },
+    {
+      "source": "gameplay/player/spit5.mp3",
+      "destination": "FloppyTurd/resources/sounds/ios/spit5.mp3",
+      "bytes": 6834,
+      "sha256": "be4fb3fa1e1e544257272008c590a32ea18ed7cdfc2a9347580e2621a279a7a7"
+    },
+    {
+      "source": "gameplay/player/spit6.mp3",
+      "destination": "FloppyTurd/resources/sounds/ios/spit6.mp3",
+      "bytes": 6286,
+      "sha256": "0ef1bde2d9302b7af7e17d838b9225a55e21457a3a624e732f9d89e9bf5d00cb"
+    }
+  ],
+  "notYetPorted": [
+    "Full ranked magnet/health progression migration",
+    "Complete Galaga/echelon/swarm enemy formation system",
+    "iOS services and store integration"
+  ]
+}
