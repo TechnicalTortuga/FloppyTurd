@@ -8,7 +8,12 @@
   const audioContexts = new Set();
   for (const name of ['AudioContext','webkitAudioContext']) {
     const Original = window[name];
-    if (Original) window[name] = new Proxy(Original, {construct(target,args,newTarget) { const context = Reflect.construct(target,args,newTarget); audioContexts.add(context); return context; }});
+    if (Original) window[name] = new Proxy(Original, {construct(target,args,newTarget) {
+      const context = Reflect.construct(target,args,newTarget);
+      audioContexts.add(context);
+      context.addEventListener?.('statechange', updateAudioControl);
+      return context;
+    }});
   }
   const session = query.get('session') || '';
   const parentOrigin = query.get('parentOrigin') || '';
@@ -43,6 +48,19 @@
   const pauseButton = document.getElementById('touch-pause');
   const jumpButton = document.getElementById('touch-jump');
   const shootButton = document.getElementById('touch-shoot');
+  const audioButton = document.getElementById('enable-audio');
+  const assetError = document.getElementById('asset-error');
+  function updateAudioControl() {
+    if (!audioButton) return;
+    const live=[...audioContexts].filter(context=>context.state!=='closed');
+    audioButton.hidden = !started || disposed || inlinePresentation || !state.visible || (!touchMode && !live.some(context=>context.state!=='running'));
+    audioButton.textContent = live.some(context=>context.state!=='running') ? 'Enable sound' : 'Sound';
+  }
+  audioButton?.addEventListener('click', () => {
+    activateAudio(); window.floppyAssets?.retryFailed();
+  });
+  document.getElementById('asset-retry')?.addEventListener('click', () => window.floppyAssets?.retryFailed());
+  window.floppyAssetStateChanged = () => { if (assetError) assetError.hidden = inlinePresentation || !window.floppyAssets.summary().failed; };
   const jumpPointers = new Set(), shootPointers = new Set();
   function touchAction(action, down) {
     if (started && !disposed) Module.ccall('floppy_touch', null, ['number','number'], [action, down ? 1 : 0]);
@@ -66,12 +84,15 @@
     pauseButton.textContent = paused ? 'Resume' : 'Pause';
     mobileBottom.hidden = !visible || !active || paused || gameOver;
     shootButton.hidden = !(gameUiState & 2);
+    updateAudioControl();
     if (touchMode && !started) document.getElementById('hint').textContent = 'Tap the game or Jump · Hold Shoot when unlocked · Pause anytime';
   }
   window.floppySetUiState = mask => { gameUiState = mask; updateMobileControls(); };
   window.addEventListener('pointerdown', event => {
     if (event.pointerType === 'touch' || event.pointerType === 'pen') { touchMode = true; updateMobileControls(); }
+    if (started && !disposed) activateAudio();
   }, {capture:true, passive:true});
+  window.addEventListener('pointerup', () => { if (started && !disposed) activateAudio(); }, {capture:true,passive:true});
   function capture(event, element) {
     event.preventDefault(); event.stopImmediatePropagation();
     element.setPointerCapture?.(event.pointerId);
@@ -108,7 +129,8 @@
   bindControl(shootButton, 1, true);
   bindControl(pauseButton, 2);
   backButton.addEventListener('click', () => send('game:request-close'));
-  window.addEventListener('blur', releaseTouches);
+  window.addEventListener('blur', () => { releaseTouches(); applyState(); });
+  window.addEventListener('focus', applyState);
   updateMobileControls();
   function send(type, payload = {}) {
     if (embedded && validParent) window.parent.postMessage({ channel: 'floppy-turd', version: 1, session, type, payload }, parentOrigin);
@@ -123,14 +145,36 @@
   function applyState() {
     updateMobileControls();
     if (!started) return;
-    if (disposed || !state.visible || document.hidden) releaseTouches();
-    Module.ccall('floppy_set_paused', null, ['number'], [disposed || !state.visible || document.hidden ? 1 : 0]);
+    const suspended = disposed || !state.visible || document.hidden || (!embedded && document.hasFocus && !document.hasFocus());
+    if (suspended) releaseTouches();
+    Module.ccall('floppy_set_paused', null, ['number'], [suspended ? 1 : 0]);
     resize();
   }
+  function selectPlaybackRoute() {
+    try {
+      const session=window.navigator?.audioSession;
+      if (session && session.type!=='playback') session.type='playback';
+    } catch {}
+  }
   function activateAudio() {
+    selectPlaybackRoute();
     window.floppyStartMuted = false;
     if (started) Module.ccall('floppy_activate_audio', null, ['number'], [1]);
-    return Promise.all([...audioContexts].map(context => context.state === 'suspended' ? context.resume().catch(() => false) : true));
+    return Promise.all([...audioContexts].map(context => {
+      if (context.state === 'running' || context.state === 'closed') return true;
+      // Safari can report "interrupted" after backgrounding or an audio route change.
+      try {
+        const resumed=context.resume().then(()=>{updateAudioControl();return context.state==='running';}).catch(()=>false);
+        // Starting a silent source from this same gesture also unlocks older WebKit.
+        if (context.createBufferSource) {
+          const source=context.createBufferSource();
+          source.buffer=context.createBuffer(1,1,context.sampleRate);
+          source.connect(context.destination); source.start();
+          source.onended=()=>source.disconnect();
+        }
+        return resumed;
+      } catch { return false; }
+    }));
   }
   function getViewport() {
     const width = canvas.width || 800, height = canvas.height || 450;
@@ -200,7 +244,9 @@
     }
     return false;
   }
-  window.floppyEmbed = Object.freeze({version:1,canvas,input:payload=>input(payload),activateAudio,setPresentation,getViewport});
+  window.floppyEmbed = Object.freeze({version:1,canvas,input:payload=>input(payload),activateAudio,setPresentation,getViewport,
+    getAudioState:()=>[...audioContexts].map(context=>({state:context.state,time:context.currentTime,sampleRate:context.sampleRate})),
+  });
   window.portfolioGame = window.floppyEmbed;
   if (autostart) gate.hidden = true;
   function fail(error) {
@@ -273,5 +319,5 @@
       if (!inlinePresentation) canvas.focus();
     } catch (error) { fail(error); }
   }
-  play.addEventListener('click', () => { startGame(); activateAudio(); });
+  play.addEventListener('click', () => { selectPlaybackRoute(); startGame(); activateAudio(); });
 })();

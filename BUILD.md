@@ -13,7 +13,7 @@ cmake -S . -B build/native -DCMAKE_BUILD_TYPE=Release
 cmake --build build/native --config Release --parallel
 ctest --test-dir build/native -C Release --output-on-failure
 python tools/audit-assets.py
-node --test tests/bridge.test.mjs
+node --test tests/*.test.mjs
 cmake --install build/native --config Release --prefix dist/native
 cpack --config build/native/CPackConfig.cmake -C Release -B dist
 ```
@@ -30,14 +30,28 @@ Install and activate the official Emscripten SDK **4.0.23**, then load its envir
 emcmake cmake -S . -B build/web -DCMAKE_BUILD_TYPE=Release -DFLOPPY_BUILD_TESTS=OFF
 cmake --build build/web --parallel
 python tools/package-web.py
-python -m http.server 8765 --bind 127.0.0.1 --directory dist/web
+python tools/serve-web.py --port 8765 --directory dist/web
 ```
 
-Open `http://127.0.0.1:8765/index.html`; click **Play Floppy Turd** to initialize audio and the game from a real user gesture. The five required browser runtime files are: `index.html`, `index.js`, `index.wasm`, `index.data`, and `bridge.js`. The packager also emits `build-manifest.json` with revision identity and SHA-256 for each runtime file; see `docs/BROWSER_CONTRACT.md`. Serve the whole distribution from the same directory using HTTP(S); `.wasm` should use `application/wasm`. No backend, threads, SharedArrayBuffer, or cross-origin isolation headers are required.
+Open `http://127.0.0.1:8765/index.html`; click **Play Floppy Turd** to initialize audio and the game from a real user gesture. The five core files are `index.html`, `index.js`, `index.wasm`, `index.data`, and `bridge.js`. Manifest schema 2 additionally includes `deferred-assets.json` and content-addressed `assets/` blobs; distribute the entire verified directory, not just the core files. See `docs/BROWSER_CONTRACT.md`. Serve `.wasm` as `application/wasm`. No backend, threads, SharedArrayBuffer, or cross-origin isolation headers are required.
 
 For this workspace's local SDK, `python .local/deps/emsdk/upstream/emscripten/emcmake.py cmake ...` also works. Keep temporary compiler files in a writable directory when sandboxing; the local build used `.local/temp`. Local dependency source overrides are optional and are not needed in CI.
 
-The full data bundle is about 124 MB, mostly music. It loads when the website enters the room containing the live TV. Splitting level music into lazy resource packages is the next download-size optimization.
+The initial core is about 2.2 MB, including an 806,904-byte resource bundle. About 123 MB of music and scenery stays on the server until requested. Only the current level is constructed; its visual dependencies finish loading before simulation starts. Music downloads asynchronously when played and releases its stream/MEMFS bytes when stopped. A 64 MB IndexedDB LRU cache reuses verified compressed assets across refreshes; HTTP caching is the fallback when storage is blocked or evicted. This is caching of downloaded assets, not an offline install of the entire game.
+
+The preview server sends `no-cache` for core files (conditional revalidation) and a one-year immutable cache header for hash-named assets. Production hosting should use the same policy. Keep previously published release directories for already-open sessions.
+
+## Test from a phone
+
+Connect the phone and computer to the same Wi-Fi. Find the computer's Wi-Fi IPv4 address with `ipconfig` on Windows, then run:
+
+```sh
+python tools/serve-web.py --bind <computer-Wi-Fi-IP> --port 8766 --directory dist/web
+```
+
+Open `http://<computer-Wi-Fi-IP>:8766/index.html` in Safari or Chrome. Keep the computer/server running. `localhost` on the phone refers to the phone itself. This serves the packaged game only; no public hosting or router port forwarding is needed. A firewall or guest-network isolation can prevent other devices connecting.
+
+Play selects Safari's playback audio route and resumes the audio context from that direct tap. Sound provides a recovery action after interruption. DOM control focus is separate from page visibility, so focusing Jump/Pause/Sound does not black out or mute the game.
 
 ## Portfolio website integration
 

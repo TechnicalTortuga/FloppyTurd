@@ -48,8 +48,6 @@ Playing::Playing(Game* game) {
     TOTALSCORE = 0;
 
     gameOverMusic = new AudioClip("resources/music/gameover.mp3");
-    PreLoadLevels();
-    SetCurrentLevel(0);
 
     gameOverBackground = Resources::RM().GetTexture("game_over_bg");
     tryAgainBackground = Resources::RM().GetTexture("try_again_bg");
@@ -95,10 +93,6 @@ Playing::Playing(Game* game) {
     AudioManager::GetInstance().LoadSoundEffect("GotCoin", "resources/sounds/pickup.ogg");
     AudioManager::GetInstance().LoadSoundEffect("GotHealth", "resources/sounds/SmallHealthPickup.wav");
     AudioManager::GetInstance().LoadSoundEffect("GotHealthBig", "resources/sounds/BigHealthPickup.wav");
-
-    Texture2D rawSnowTexture = Resources::RM().GetTexture("snowfall");
-    snowOverlay = std::make_unique<SnowOverlay>(rawSnowTexture, 16, 0.15f);
-    SetTextureWrap(rawSnowTexture, TEXTURE_WRAP_CLAMP);
 
     // Initialize touch controls for mobile
     touchControls = new TouchControls();
@@ -175,20 +169,6 @@ void Playing::InitializeHats() {
 
     // No default hat is equipped. currentSelectedHat remains nullptr unless loaded from a save.
     player->SetHat(currentSelectedHat);
-}
-
-void Playing::PreLoadLevels() {
-    levels.emplace_back(std::make_shared<ParkLevel>());
-    levels.emplace_back(std::make_shared<SewerLevel>());
-    levels.emplace_back(std::make_shared<DesertLevel>());
-    levels.emplace_back(std::make_shared<SnowLevel>());
-    levels.emplace_back(std::make_shared<CastleLevel>());
-    levels.emplace_back(std::make_shared<BossLevel>());
-
-    for (int i = 0; i < 6; ++i) {
-        levels[i]->SetDifficulty(1);
-        levels[i]->SetPanSpeed(80.0f);
-    }
 }
 
 Playing::~Playing() {
@@ -686,6 +666,17 @@ void Playing::DrawGameOverScreen() {
 
 void Playing::Update() {
     deltaTime = GetFrameTime();
+    if (pendingLevel >= 0) {
+        const int status = WebAssets::Level(pendingLevel);
+        levelLoadFailed = status < 0;
+        if (status == 1) {
+            const int index = pendingLevel;
+            pendingLevel = -1;
+            CompleteLevelLoad(index);
+        }
+        return; // Discard loading time and any first-frame input.
+    }
+    if (!levelManager) return;
 
     if (isPaused) {
         return;
@@ -937,6 +928,8 @@ void Playing::Update() {
 }
 
 void Playing::Draw() {
+    if (pendingLevel >= 0) { DrawLevelLoading(); return; }
+    if (!levelManager) return;
     BeginMode2D(RenderLayout::WorldCamera());
     if (levelManager) {
         levelManager->Draw();
@@ -1049,6 +1042,14 @@ void Playing::CancelTouchInput() {
 }
 
 void Playing::HandleInput() {
+    if (pendingLevel >= 0) {
+        CancelTouchInput();
+        if (EmbedInput::KeyPressed(KEY_ESCAPE)) {
+            pendingLevel = -1;
+            game->SetGameState(Game::MAINMENU);
+        }
+        return;
+    }
     // Update touch controls
     if (touchControls) {
         touchControls->Update();
@@ -1125,7 +1126,7 @@ void Playing::FadeOutMusic(float deltaTime) {
 
 void Playing::SetCurrentLevel(int levelIndex) {
     CancelTouchInput();
-    if (levelIndex < 0 || levelIndex >= levels.size()) {
+    if (levelIndex < 0 || levelIndex >= 6) {
         std::cerr << "Try Again Error: Invalid level index " << levelIndex << std::endl;
         return;
     }
@@ -1134,6 +1135,36 @@ void Playing::SetCurrentLevel(int levelIndex) {
         currentMusic->Stop();
         currentMusic = nullptr;
     }
+    levelManager.reset();
+    delete bossHealthBar;
+    bossHealthBar = nullptr;
+    snowOverlay.reset();
+    pendingLevel = levelIndex;
+    levelLoadFailed = false;
+    if (WebAssets::Level(levelIndex) == 1) {
+        pendingLevel = -1;
+        CompleteLevelLoad(levelIndex);
+    }
+}
+
+void Playing::DrawLevelLoading() {
+    AIGUI_SetRenderCamera(RenderLayout::UiCamera());
+    BeginMode2D(RenderLayout::UiCamera());
+    RenderLayout::EndCameraOnExit endUi;
+    const char* title = levelLoadFailed ? "Couldn't load this level" : "Loading level...";
+    DrawPixelTextCentered(g_AIGUI.defaultFont, title, {10,50,300,28}, 18, 1, WHITE);
+    DrawPixelTextCentered(g_AIGUI.defaultFont, levelLoadFailed ? "Check your connection and retry." : "Preparing scenery and enemies", {10,82,300,20}, 12, 1, WHITE);
+    if (levelLoadFailed && AIGUI_ButtonRounded("Retry", 55,112,95,28,0.2f,16,BLACK)) {
+        WebAssets::RetryLevel(pendingLevel);
+        levelLoadFailed = false;
+    }
+    if (AIGUI_ButtonRounded("Back",170,112,95,28,0.2f,16,BLACK)) {
+        pendingLevel = -1;
+        game->SetGameState(Game::MAINMENU);
+    }
+}
+
+void Playing::CompleteLevelLoad(int levelIndex) {
 
     std::shared_ptr<Level> newLevel;
     switch (levelIndex) {
@@ -1162,6 +1193,11 @@ void Playing::SetCurrentLevel(int levelIndex) {
     case 2: panSpeed = 120.0f; break;
     }
     newLevel->SetPanSpeed(panSpeed);
+    if (levelIndex == 3) {
+        const Texture2D texture = Resources::RM().GetTexture("snowfall");
+        snowOverlay = std::make_unique<SnowOverlay>(texture, 16, 0.15f);
+        SetTextureWrap(texture, TEXTURE_WRAP_CLAMP);
+    }
 
     if (BossLevel* bossLevel = dynamic_cast<BossLevel*>(newLevel.get())) {
         std::shared_ptr<Boss> boss = bossLevel->GetBoss();

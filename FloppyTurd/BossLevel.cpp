@@ -33,11 +33,6 @@ BossLevel::BossLevel()
     currentMusic = levelMusicRegular;
 
     lowHealthMusic = new AudioClip(BossLowHealth);
-    lowHealthMusic->SetVolume(0.0f);
-    lowHealthMusic->Play();
-    lowHealthMusic->Update();
-    lowHealthMusic->Stop();
-    lowHealthMusic->SetVolume(1.0f);
 
     // Preload BossBeat sound
     AudioManager::GetInstance().LoadSoundEffect("BossBeat", BossBeat);

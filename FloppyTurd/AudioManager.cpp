@@ -33,7 +33,7 @@ void AudioManager::Shutdown() {
 
 void AudioManager::StopMusic() {
     for (auto* clip : activeClips) {
-        if (clip && clip->IsPlaying()) { // Only stop if clip is valid and playing
+        if (clip && (clip->IsPlaying() || clip->IsPlaybackRequested())) {
             clip->Stop();
         }
     }

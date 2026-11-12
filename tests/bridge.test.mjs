@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const source = fs.readFileSync(new URL('../web/bridge.js', import.meta.url), 'utf8');
-function harness(extra = "") {
+function harness(extra = "", overrides = {}) {
   const listeners = {}, sent = [], calls = [], elements = {};
-  for (const name of ['canvas','gate','play','status','hint','fullscreen','mobile-top','mobile-bottom','touch-back','touch-pause','touch-jump','touch-shoot']) elements[name] = { hidden:false, textContent:'', clientWidth:960, clientHeight:540, addEventListener(name, fn) { this[name] = fn; }, focus() {} };
+  for (const name of ['canvas','gate','play','status','hint','fullscreen','mobile-top','mobile-bottom','touch-back','touch-pause','touch-jump','touch-shoot','enable-audio','asset-error','asset-retry']) elements[name] = { hidden:false, textContent:'', clientWidth:960, clientHeight:540, addEventListener(name, fn) { this[name] = fn; }, focus() {} };
   elements.canvas.getContext = function(type,attributes) { this.contextAttributes=attributes; return {}; };
   const parent = { postMessage: (message, origin) => sent.push({message, origin}) };
   const context = { console, URL, URLSearchParams, Uint8Array,
@@ -13,14 +13,45 @@ function harness(extra = "") {
     document: {hidden:false, getElementById: id => elements[id], addEventListener(name, fn) {listeners[name] = fn;} },
     ResizeObserver: class { observe() {} },
     addEventListener(name, fn) {listeners[name] = fn;},
+    ...overrides,
   };
   context.window = context;
+  if (overrides.standalone) context.parent=context;
   vm.runInNewContext(source, context);
   context.Module.ccall = (...args) => calls.push(args);
   context.Module.callMain = () => {};
   const envelope = (type, payload) => ({source:parent, origin:'https://portfolio.example', data:{channel:'floppy-turd',version:1,session:'abc',type,payload}});
   return { context, listeners, sent, calls, elements, envelope };
 }
+
+test('a genuine tap recovers interrupted Safari audio; explicit Sound selects playback', async()=>{
+  class Context {
+    state='interrupted'; resumes=0;
+    addEventListener(){}
+    resume(){this.resumes++;this.state='running';return Promise.resolve();}
+  }
+  const navigator={audioSession:{type:'auto'}};
+  const h=harness('&touch=1',{AudioContext:Context,navigator});
+  h.listeners.message(h.envelope('host:init',{visible:true}));h.context.Module.onRuntimeInitialized();h.elements.play.click();
+  assert.equal(navigator.audioSession.type,'playback','the first Play tap selects the route');
+  const audio=new h.context.AudioContext();
+  h.listeners.pointerup();await Promise.resolve();
+  assert.equal(audio.state,'running');assert.equal(audio.resumes,1);
+  h.elements['enable-audio'].click();
+  assert.equal(navigator.audioSession.type,'playback');
+});
+
+test('standalone DOM controls keep page active; actual window blur pauses and focus resumes',()=>{
+  const h=harness('&touch=1',{standalone:true});let focused=true;
+  h.context.document.hasFocus=()=>focused;
+  h.context.Module.onRuntimeInitialized();h.elements.play.click();
+  h.elements['enable-audio'].click();
+  assert.equal(h.calls.filter(c=>c[0]==='floppy_set_paused').at(-1)[3][0],0);
+  focused=false;h.listeners.blur();
+  assert.equal(h.calls.filter(c=>c[0]==='floppy_set_paused').at(-1)[3][0],1);
+  focused=true;h.listeners.focus();
+  assert.equal(h.calls.filter(c=>c[0]==='floppy_set_paused').at(-1)[3][0],0);
+});
 test('embedded ready/hidden/resume/dispose flow reaches the game', () => {
   const h = harness();
   h.listeners.message(h.envelope('host:init', {visible:true}));

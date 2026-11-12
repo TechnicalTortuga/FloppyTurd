@@ -52,15 +52,25 @@ foreach(ASSET IN LISTS ASSETS)
     configure_file("FloppyTurd/resources/${ASSET}" "${RUNTIME_ASSETS}/${ASSET}" COPYONLY)
 endforeach()
 if(EMSCRIPTEN)
-    configure_file(web/bridge.js ${CMAKE_CURRENT_BINARY_DIR}/bridge.js COPYONLY)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS tools/prepare-web-assets.py web/asset-loader.js web/bridge.js)
+    execute_process(COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tools/prepare-web-assets.py"
+        --source "${RUNTIME_ASSETS}" --output "${CMAKE_CURRENT_BINARY_DIR}"
+        COMMAND_ERROR_IS_FATAL ANY)
+    file(READ web/asset-loader.js ASSET_LOADER_JS)
+    file(READ web/bridge.js BRIDGE_JS)
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/bridge.js" "${ASSET_LOADER_JS}\n${BRIDGE_JS}")
     set_target_properties(FloppyTurd PROPERTIES OUTPUT_NAME index SUFFIX ".html")
+    set_property(TARGET FloppyTurd APPEND PROPERTY LINK_DEPENDS
+        "${CMAKE_CURRENT_BINARY_DIR}/asset-catalog.js" "${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html")
     target_compile_options(FloppyTurd PRIVATE -fexceptions)
     target_link_options(FloppyTurd PRIVATE
         -fexceptions -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=134217728
         -sSTACK_SIZE=2097152 -sFORCE_FILESYSTEM=1
         "-sEXPORTED_FUNCTIONS=['_main','_floppy_set_paused','_floppy_resize','_floppy_touch','_floppy_key','_floppy_pointer','_floppy_reset_input','_floppy_set_presentation','_floppy_activate_audio']"
         "-sEXPORTED_RUNTIME_METHODS=['ccall','FS','callMain','HEAPF32']"
-        "--preload-file=${RUNTIME_ASSETS}@/resources"
+        "--pre-js=${CMAKE_CURRENT_BINARY_DIR}/asset-catalog.js"
+        "--preload-file=${CMAKE_CURRENT_BINARY_DIR}/bootstrap/resources@/resources"
         "--shell-file=${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html")
 else()
     add_custom_command(TARGET FloppyTurd POST_BUILD

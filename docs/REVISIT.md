@@ -60,14 +60,18 @@ See the final chat update for the most recent interactive browser checks. These 
 Next priorities:
 
 1. Play through every level and the boss after the wider framing change; review spawn rhythm, gaps, camera anchors and first-frame input together. Keep the original balance available in Git for comparison.
-2. Split music/level data for browser download size. The initial full runtime data file is about 124 MB; opening the 3D website alone should not download it.
+2. Measure cold/warm loads and cache eviction on physical browsers after the deferred-loading changes below. Consider re-encoding/deduplicating the remaining server-side music library separately from startup optimization.
 3. Consolidate TextureCache, ResourceManager and the currently underused atlas system. Borrowed raw texture handles must not outlive cache eviction; the present interfaces do not encode that guarantee.
 4. Persist equipped hat, settings and richer statistics in a subsequent shared schema, then deliberately choose which iOS rank/progression changes to port. The new desktop v2 binary is not the Swift JSON format.
 5. Review mixed Update/Draw responsibilities and audio ownership in level constructors; eliminate eager loading of every level once behavior is covered. Some legacy warnings and raw-pointer ownership remain.
-6. Run the prepared Windows/Linux/macOS CI matrix, then perform real macOS/Linux audio, controller/window and packaging checks. Decide signing/notarization separately from building.
+6. Continue the Windows/Linux/macOS CI matrix and perform real macOS/Linux audio, controller/window and packaging checks. Decide signing/notarization separately from building.
 
 The restoration is committed and pushed on `revisit/cross-platform` for its CI builds. The first Windows/Linux/macOS/Web matrix passed (run 43124791254). No game or website has been published, upstream master is unchanged, and the iOS snapshot has not been modified.
 
 Mobile follow-up: the browser shell detects touch/pen/coarse-pointer capabilities and offers Jump, held Shoot, Pause/Resume and embedded Back controls; it clears held actions on cancellation/backgrounding. The protocol remains v1. `docs/BROWSER_CONTRACT.md` and hash-verified distribution manifests make future revision replacement repeatable. Game-over score/coin rows are raised and aligned by visible glyph bounds.
 
 Live-TV follow-up: optional embedded muted autostart, preserved WebGL drawing buffers, one persistent session, and `window.portfolioGame` / `window.floppyEmbed` same-origin presentation/audio/input API. The shared `portfolio-input` v1 pointer/key/reset/capability schema is independent of Floppy Turd actions. Input is latched in C++ so rapid gestures survive frame boundaries; pointer cancellation does not click a menu.
+
+Deferred-loading follow-up: replace the 123,670,167-byte preload with an 806,904-byte core asset pack (about 2.2 MB for all core runtime files). Level visual groups load before constructing that scene; only the selected music clip downloads when played. Remove eager construction of every level and the web atlas sweep. Music stop releases WASM decoder/MEMFS ownership; content-addressed compressed files use a bounded 64 MB persistent cache and immutable HTTP caching. Manifest schema 2 lists all deferred blobs/catalog, while lifecycle/input remain v1. The website retains immutable prior releases for open sessions.
+
+Physical iPhone 16/Safari testing reached the LAN preview and confirmed audio after Sound. It exposed a reproducible DOM-focus blackout: GLFW canvas blur was mistaken for page backgrounding. The browser shell now owns page visibility/focus and frozen frames retain the prior image. Play selects Safari's playback route so Sound is recovery rather than a second activation step. Broader physical touch, interruption, performance and all-level playtesting remain ongoing.

@@ -24,7 +24,7 @@ Credits::Credits(Game* game)
     if (music)
     {
         // Playback starts when the credits state is entered.
-        totalScrollTime = GetMusicTimeLength(music->music);
+        totalScrollTime = music->music.stream.buffer ? GetMusicTimeLength(music->music) : 0;
         if (totalScrollTime <= 0.0f)
         {
             TraceLog(LOG_WARNING, "Failed to get music length, falling back to 10 seconds");
@@ -100,6 +100,11 @@ Credits::~Credits()
 
 void Credits::Update(float deltaTime)
 {
+    if (music && !music->IsPlaying()) music->Play();
+    if (music && music->music.stream.buffer) {
+        const float length = GetMusicTimeLength(music->music);
+        if (length > 0) totalScrollTime = length;
+    }
     elapsedTime += deltaTime;
 
     // Update text scroll offset
@@ -201,7 +206,7 @@ void Credits::Reset()
     if (music)
     {
         music->Stop();
-        // Playback starts when the credits state is entered.
+        music->Play();
     }
     // Reset pipe positions
     float startX = 320.0f;

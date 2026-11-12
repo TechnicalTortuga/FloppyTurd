@@ -11,10 +11,14 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;outline:no
 #mobile-top[hidden],#mobile-bottom[hidden],[hidden]{display:none!important}
 .mobile-control{min-width:56px;min-height:48px;padding:10px 16px;background:#202b1ee8;border-color:#e5d394;touch-action:none;user-select:none;-webkit-user-select:none}
 #touch-jump,#touch-shoot{min-width:80px;min-height:60px;border-radius:12px}
+#enable-audio{position:absolute;left:max(10px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom));font-size:14px;padding:8px 12px}
+#asset-error{position:absolute;top:65px;left:50%;transform:translateX(-50%);background:#202b1ef5;padding:8px 12px;max-width:90vw;font-size:14px}#asset-retry{padding:5px 10px}
 @media(max-height:500px){#mobile-bottom{gap:90px}#touch-jump,#touch-shoot{min-height:48px}}
 </style></head><body>
 <canvas id="canvas" tabindex="0" aria-label="Floppy Turd game"></canvas>
 <button id="fullscreen" hidden>Fullscreen</button>
+<button id="enable-audio" hidden>Enable sound</button>
+<div id="asset-error" hidden role="status">Some files could not load. <button id="asset-retry">Retry</button></div>
 <div id="mobile-top" hidden><button id="touch-back" class="mobile-control" hidden>Back</button><button id="touch-pause" class="mobile-control" hidden>Pause</button></div>
 <div id="mobile-bottom" hidden><button id="touch-jump" class="mobile-control">Jump</button><button id="touch-shoot" class="mobile-control" hidden>Shoot</button></div>
 <div id="gate"><h1>Floppy Turd</h1><p id="status" role="status">Loading the game…</p><button id="play" hidden>Play Floppy Turd</button><p id="hint">Space: jump · S: shoot · Esc: pause</p></div>

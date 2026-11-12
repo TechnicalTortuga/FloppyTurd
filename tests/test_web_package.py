@@ -11,6 +11,23 @@ if not TEMP_PARENT.is_relative_to(ROOT): raise RuntimeError('Invalid fixture roo
 TEMP_PARENT.mkdir(parents=True,exist_ok=True)
 FILES=['index.html','index.js','index.wasm','index.data','bridge.js']
 class PackageContract(unittest.TestCase):
+    def test_deferred_catalog_is_verified_and_packaged_as_schema_two(self):
+        with tempfile.TemporaryDirectory(dir=TEMP_PARENT) as directory:
+            source=Path(directory)/'source'; output=Path(directory)/'output'; source.mkdir()
+            for name in FILES: (source/name).write_text('fixture '+name)
+            data=b'music bytes'; digest=hashlib.sha256(data).hexdigest(); name=f'assets/{digest}.mp3'
+            (source/'assets').mkdir(); (source/name).write_bytes(data)
+            catalog={'schemaVersion':1,'files':{'resources/music/test.mp3':{'url':name,'bytes':len(data),'sha256':digest}},'groups':{'level-0':['resources/music/test.mp3']}}
+            (source/'deferred-assets.json').write_text(json.dumps(catalog))
+            command=[sys.executable,str(ROOT/'tools/package-web.py'),'--build',str(source),'--output',str(output)]
+            result=subprocess.run(command,capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stderr)
+            manifest=json.loads((output/'build-manifest.json').read_text())
+            self.assertEqual(manifest['schemaVersion'],2)
+            self.assertEqual(manifest['deferredAssetsManifest'],'deferred-assets.json')
+            self.assertEqual((output/name).read_bytes(),data)
+            (source/name).write_bytes(b'corrupt')
+            self.assertNotEqual(subprocess.run(command,capture_output=True).returncode,0)
     def test_manifest_matches_complete_revision(self):
         with tempfile.TemporaryDirectory(dir=TEMP_PARENT) as directory:
             source=Path(directory)/'source'; output=Path(directory)/'output'; source.mkdir()

@@ -55,7 +55,7 @@ public:
     bool IsGameOver() const { return GAMEOVER; }
     void FadeOutMusic(float deltaTime);
     void SetCurrentLevel(int levelIndex);
-    void PreLoadLevels();
+    bool IsLoadingLevel() const { return pendingLevel >= 0; }
     void UnlockSkill(int skillIndex);
     void OutputHatMenu();
     void LoadSessionRecords();
@@ -94,7 +94,10 @@ private:
 
     float deltaTime{};
     std::unique_ptr<LevelManager> levelManager;
-    std::vector<std::shared_ptr<Level>> levels;
+    int pendingLevel = -1;
+    bool levelLoadFailed = false;
+    void CompleteLevelLoad(int levelIndex);
+    void DrawLevelLoading();
 
     Texture2D gameOverBackground;
     Texture2D tryAgainBackground;

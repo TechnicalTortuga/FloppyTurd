@@ -3,7 +3,7 @@
 Restored from `53636de6298fcca93fef470b2efb481defe05322` (July 2, 2025, v0.902), the last complete raylib checkpoint previously selected for the portfolio website. The last June checkpoint is `cf21d1d` (June 10, 2025). Work is on `revisit/cross-platform`; upstream master is preserved.
 
 - [Build, package, and browser integration](BUILD.md)
-- [Stable browser/revision contract v1](docs/BROWSER_CONTRACT.md)
+- [Stable browser/revision contract](docs/BROWSER_CONTRACT.md)
 - [Gameplay differences, asset provenance, and code review](docs/REVISIT.md)
 - [Asset comparison](docs/asset-comparison.json)
 - [Pinned dependencies](dependencies.lock.json)
@@ -17,3 +17,5 @@ Original raylib balancing remains the starting point. The later iOS/Pooper Troop
 Touch-capable browsers automatically show mobile controls. Tap the gameplay canvas or Jump, hold Shoot after unlocking it, and use Pause/Resume or the embedded Back button. Portrait and landscape use the same letterboxed game. Add `?touch=1` to preview controls on desktop; this does not replace real iOS/Android device testing.
 
 The portfolio can run the same session live on its TV with `embed=1&autostart=1`. The shared `portfolio-input` v1 pointer/key/capability schema and `window.portfolioGame` API keep future revisions and other games independent of the website scene. Embedded audio stays muted until a genuine activation gesture.
+
+The browser starts with about **2.2 MB** of core files, including **807 KB** of bootstrap resources. Level scenery/enemies load when entering that level; only the selected music track downloads when played. Content-addressed assets use a bounded 64 MB IndexedDB cache and HTTP caching, with storage/network failure recovery. This reduces the initial download; the full server-side asset library is still about 124 MB. The first Play tap activates Safari audio; Sound retries after an interruption.

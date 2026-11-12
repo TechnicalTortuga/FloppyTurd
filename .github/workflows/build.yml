@@ -29,7 +29,7 @@ jobs:
       - run: cmake -S . -B build/ci -DCMAKE_BUILD_TYPE=Release -DGLFW_BUILD_WAYLAND=OFF
       - run: cmake --build build/ci --config Release --parallel
       - run: ctest --test-dir build/ci -C Release --output-on-failure
-      - run: node --test tests/bridge.test.mjs
+      - run: node --test tests/*.test.mjs
       - run: cpack --config build/ci/CPackConfig.cmake -C Release -B dist
       - uses: actions/upload-artifact@v4
         with:

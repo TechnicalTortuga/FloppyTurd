@@ -33,7 +33,9 @@ Game::Game()
 	window = new Window(true, 1280, 720);
 	InitAudioDevice();
 #ifdef __EMSCRIPTEN__
-    hostManagedVisibility = EM_ASM_INT({ return window.floppyIsEmbedded ? 1 : 0; });
+    // GLFW reports canvas focus; real DOM controls must not pause/black out the page.
+    // The browser shell owns page visibility/focus in both standalone and embeds.
+    hostManagedVisibility = true;
     audioActivated = !EM_ASM_INT({ return window.floppyStartMuted ? 1 : 0; });
     SetMasterVolume(audioActivated ? 1 : 0);
 #endif
@@ -76,7 +78,8 @@ Game::Game()
 	TextureAtlas::GetInstance().Initialize();
 	TraceLog(LOG_INFO, "TextureAtlas: Initialized successfully");
 
-	// --- Build Atlases for all categories using ResourceManager ---
+#ifndef __EMSCRIPTEN__
+	// Native builds can prepare all atlases; browser scenes load their own assets.
 	ResourceManager& rm = ResourceManager::GetInstance();
 	std::unordered_map<AtlasCategory, std::vector<std::string>> atlasCategoryToPaths;
 
@@ -105,6 +108,7 @@ Game::Game()
 	for (const auto& [cat, paths] : atlasCategoryToPaths) {
 		TextureAtlas::GetInstance().BuildAtlas(cat, paths);
 	}
+#endif
 
 	// Initialize PerformanceProfiler with draw call tracking enabled
 	PerformanceProfiler::GetInstance().SetTargetFPS(60);
@@ -216,6 +220,8 @@ void Game::Tick()
         focusPaused = true;
         BeginDrawing();
         ClearBackground(BLACK);
+        const auto frozen = FloppyViewport::Fit(GetScreenWidth(), GetScreenHeight(), !touchPresentation);
+        DrawTexturePro(target.texture, {0,0,800,-450}, {frozen.x,frozen.y,frozen.width,frozen.height}, {0,0}, 0, WHITE);
         EndDrawing();
         return;
     }
@@ -263,7 +269,7 @@ void Game::Tick()
     EndDrawing();
     EmbedInput::EndFrame();
 #ifdef __EMSCRIPTEN__
-    const bool active = gamestate == PLAYING;
+    const bool active = gamestate == PLAYING && !playing->IsLoadingLevel();
     const int webUiState = (active ? 1 : 0) | (active && playing->player->CanShoot() ? 2 : 0)
         | (active && playing->IsPaused() ? 4 : 0) | (active && playing->IsGameOver() ? 8 : 0);
     if (webUiState != lastWebUiState) {
