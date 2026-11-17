@@ -3,21 +3,20 @@
 #include "ResourceCompat.h"
 #include <iostream>
 #include "GameSfx.h"
+#include "GameSettings.h"
+#include "EnemyEntry.h"
 
 ToiletPaper::ToiletPaper(Vector2 spawnPos, float panspeed, float extra)
     : pos(spawnPos), speed(panspeed), extraSpeed(extra), isHurt(false), hurtTimer(0.0f)
 {
     using namespace Resources;
+    pos.x=EnemyEntry::OffscreenX(GameSettings::GameWidth,pos.x);
     tpSpriteIdle = new Sprite(ToiletPaperIdle, 8, 0.2f);
     tpSpriteHurt = new Sprite(ToiletPaperHurt, 4, 0.1f);
     currentSprite = tpSpriteIdle;
 
-    startY = 70.0f + GetRandomValue(-10, 10);
+    startY = spawnPos.y;
     phaseOffset = GetRandomValue(0, 628) / 100.0f;
-
-    idleTimer = 0.0f;
-    idleDelay = GetRandomValue(4, 8);
-    active = GetRandomValue(0, 100) < 75;
 
     UpdateHitbox();
 }
@@ -30,7 +29,7 @@ ToiletPaper::~ToiletPaper()
 
 void ToiletPaper::Update(float deltaTime)
 {
-    // Defeat animation must advance even when a roll was waiting to activate.
+    // Defeated rolls still drift and finish their animation before removal.
     if (isHurt) {
         hurtTimer -= deltaTime;
         tpSpriteHurt->Update(deltaTime);
@@ -39,19 +38,7 @@ void ToiletPaper::Update(float deltaTime)
         UpdateHitbox();
         return;
     }
-    if (!active) {
-        idleTimer += deltaTime;
-        if (idleTimer >= idleDelay) {
-            active = true;
-            idleTimer = 0.0f;
-            idleDelay = GetRandomValue(4, 8);
-        }
-        return;
-    }
-
-    pos.x -= (speed + extraSpeed) * deltaTime;
-    float wave = sinf(pos.x * 0.015f + phaseOffset);
-    pos.y = startY + 50.0f * (inverted ? -wave : wave);
+    pos=EnemyEntry::AdvanceRoll(pos,startY,waveDistance,speed+extraSpeed,phaseOffset,inverted,deltaTime);
 
     tpSpriteIdle->Update(deltaTime);
 

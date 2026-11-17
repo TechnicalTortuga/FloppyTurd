@@ -1,4 +1,6 @@
 #include "GameSettings.h"
+#include "EnemyEntry.h"
+#include "TextureCache.h"
 #include <algorithm>
 #include "LevelManager.h"
 #include "BossLevel.h"
@@ -64,7 +66,6 @@ void LevelManager::UpdateEnemyFactory()
     }
     else if (DesertLevel* desert = dynamic_cast<DesertLevel*>(currentLevel.get())) {
         enemyFactory = [desert, this](Vector2) -> std::shared_ptr<Enemy> {
-            static float lastBirdX = -1000.0f;
             const float screenWidth = GameSettings::GameWidth;
 
             if (desert->outhouses.size() < 2) {
@@ -92,22 +93,15 @@ void LevelManager::UpdateEnemyFactory()
                 float leftEdge = leftHit.x + leftHit.width + 10.0f;
                 float rightEdge = rightHit.x - 10.0f;
 
-                if ((rightEdge - leftEdge) < 32.0f) {
+                const auto spawnRange=EnemyEntry::OffscreenGap(screenWidth,leftEdge,rightEdge,32);
+                if (!spawnRange.Valid()) {
                     std::cout << "[BirdSpawn] ⚠️ Gap too narrow between outhouses\n";
                     continue;
                 }
 
-                float centerX = (leftEdge + rightEdge - 24.0f) / 2.0f;
-                float spawnX = (float)GetRandomValue((int)(centerX - 40), (int)(centerX + 40));
-                spawnX = std::clamp(spawnX, leftEdge, rightEdge - 24.0f);
+                const float spawnX=(float)GetRandomValue((int)spawnRange.min,(int)spawnRange.max);
                 float spawnY = (float)GetRandomValue(40, 140);
 
-                if (spawnX - lastBirdX < 80.0f) {
-                    std::cout << "[BirdSpawn] ⚠️ Too close to last Bird (lastX: " << lastBirdX << ", newX: " << spawnX << ")\n";
-                    continue;
-                }
-
-                lastBirdX = spawnX;
                 Vector2 spawnPos = { spawnX, spawnY };
                 std::cout << "[BirdSpawn] ✅ (" << spawnX << ", " << spawnY << ")\n";
                 return std::make_shared<Bird>(spawnPos, GetPickupPanSpeed());
@@ -297,7 +291,8 @@ void LevelManager::SpawnEnemy()
 
     if (SewerLevel* sewer = dynamic_cast<SewerLevel*>(currentLevel.get())) {
         auto& pipes = sewer->GetPipes();
-        for (size_t i = 0; i < pipes.size() - 1; ++i) {
+        const float spriteHeight=(float)TextureCache::Get(Resources::ToiletPaperIdle).height;
+        for (size_t i = 0; i+1 < pipes.size(); ++i) {
             PipeType type = pipes[i]->GetPipeType();
             PipeType nextType = pipes[i + 1]->GetPipeType();
 
@@ -308,10 +303,10 @@ void LevelManager::SpawnEnemy()
                 float bottomEdge = pipes[i + 1]->GetEdge();
 
                 float minY = topEdge + 10.0f;
-                float maxY = bottomEdge - 32.0f;
-                if (maxY < minY + 4.0f) maxY = minY + 4.0f;
+                float maxY = bottomEdge - spriteHeight - 10.0f;
+                if (maxY < minY) continue;
 
-                float spawnX = 340.0f;
+                float spawnX = EnemyEntry::OffscreenX(GameSettings::GameWidth);
                 float spawnY = GetRandomValue((int)minY, (int)maxY);
 
                 std::shared_ptr<ToiletPaper> tp = std::make_shared<ToiletPaper>(Vector2{ spawnX, spawnY }, sewer->GetPipePanSpeed());

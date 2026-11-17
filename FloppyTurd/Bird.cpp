@@ -2,11 +2,14 @@
 #include "ResourceCompat.h"
 #include <cmath>
 #include "GameSfx.h"
+#include "GameSettings.h"
+#include "EnemyEntry.h"
 
 Bird::Bird(Vector2 startPos, float spd)
     : pos(startPos), speed(spd), baseY(startPos.y), hoverTimer(0.0f)
 {
     using namespace Resources;
+    pos.x=EnemyEntry::OffscreenX(GameSettings::GameWidth,pos.x);
     flySprite = new Sprite(BirdIdle, 4, 0.1f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
     hurtSprite = new Sprite(BirdHurt, 4, 0.1f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
 

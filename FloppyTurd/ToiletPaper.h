@@ -24,6 +24,7 @@ private:
     float extraSpeed;
     float startY;
     float phaseOffset;
+    float waveDistance=0;
     bool inverted = false;
 
     bool isHurt;
@@ -38,7 +39,4 @@ private:
 
     void UpdateHitbox();
 
-    bool active;
-    float idleTimer;
-    float idleDelay;
 };
