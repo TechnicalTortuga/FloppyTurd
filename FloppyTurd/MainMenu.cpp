@@ -42,7 +42,7 @@ static bool borderlessEnabled = false;
 static bool fullscreenEnabled = true; // Game starts in fullscreen mode
 
 MainMenu::MainMenu(Game* game)
-	: game(game), currentMenu(MAIN_MENU), fClickCount(0), fClickCooldown(0.0f), fHoverScale(1.0f), paintingHoverScale(1.0f), fartModeEnabled(false)
+	: game(game), currentMenu(MAIN_MENU), fClickCount(0), fClickCooldown(0.0f), fHoverScale(1.0f), fartModeEnabled(false)
 {
 	using namespace Resources;
 
@@ -332,31 +332,7 @@ void MainMenu::Draw()
 		float paintingY = (180.0f - painting.height) / 2.0f;
 		Rectangle paintingRect = { paintingX, paintingY, (float)painting.width, (float)painting.height };
 
-		bool hovered = CheckCollisionPointRec(g_AIGUI.mousePos, paintingRect);
-		float targetScale = hovered ? 1.05f : 1.0f;
-		paintingHoverScale += (targetScale - paintingHoverScale) * (5.0f * GetFrameTime());
-
-		float scaledW = painting.width * paintingHoverScale;
-		float scaledH = painting.height * paintingHoverScale;
-		Rectangle scaledRect = { paintingX, paintingY, scaledW, scaledH };
-
-		DrawTexturePro(painting,
-			Rectangle{ 0, 0, (float)painting.width, (float)painting.height },
-			scaledRect,
-			Vector2{ 0, 0 },
-			0.0f,
-			WHITE);
-
-		// Only draw locked painting if not unlocked
-		if (!levelsUnlocked[currentLevelIndex])
-		{
-			DrawTexturePro(lockedPainting,
-				Rectangle{ 0, 0, (float)lockedPainting.width, (float)lockedPainting.height },
-				scaledRect,
-				Vector2{ 0, 0 },
-				0.0f,
-				WHITE);
-		}
+        const bool paintingClicked=DrawLevelPainting(paintingRect);
 
 		const char* title = levelNames[currentLevelIndex];
 		AIGUI_LabelRounded(title, 10.0f, 10.0f, 300.0f, 24.0f, 0.2f, 18, BLACK); // Increased font to 20
@@ -429,17 +405,10 @@ void MainMenu::Draw()
 			}
 		}
 
-		// Always allow click if unlocked, no need for separate hover check here
-		if (levelsUnlocked[currentLevelIndex] && CheckCollisionPointRec(g_AIGUI.mousePos, scaledRect))
-		{
-			// Use platform-agnostic input
-			auto& platform = PlatformLayer::GetInstance();
-			if (platform.IsPrimaryInputReleased())
-			{
-				game->SetGameState(Game::PLAYING);
-				if (game && game->playing) game->playing->SetCurrentLevel(currentLevelIndex);
-			}
-		}
+        if (paintingClicked) {
+            game->SetGameState(Game::PLAYING);
+            game->playing->SetCurrentLevel(currentLevelIndex);
+        }
 
 		// Reverted button positions from MainMenuold.cpp
 		if (currentLevelIndex > 0 && AIGUI_ButtonRounded("Previous", 40.0f, 150.0f, 100.0f, 24.0f, 0.1f, 20, BLACK)) // Increased font to 20
@@ -564,6 +533,17 @@ void MainMenu::Draw()
 	UseHighDefFont(false);
 }
 
+bool MainMenu::DrawLevelPainting(Rectangle rect) {
+    auto& platform=PlatformLayer::GetInstance();
+    const bool hovered=CheckCollisionPointRec(g_AIGUI.mousePos,rect);
+    const bool clicked=paintingInteraction.Update(currentLevelIndex,hovered,platform.IsPrimaryInputPressed(),
+        platform.IsPrimaryInputDown(),platform.IsPrimaryInputReleased(),levelsUnlocked[currentLevelIndex],GetFrameTime());
+    const auto drawn=paintingInteraction.Bounds(rect);
+    MobileUi::DrawAsset(levelPaintings[currentLevelIndex],drawn);
+    if (!levelsUnlocked[currentLevelIndex]) MobileUi::DrawAsset(lockedPainting,drawn);
+    return clicked;
+}
+
 Rectangle MainMenu::MobileLogoRect() const {
     const auto area = MobileUi::Content();
     const bool wide = area.width > area.height * 1.3f;
@@ -612,8 +592,10 @@ void MainMenu::DrawMobile() {
             ? Rectangle{area.x,area.y+42,area.width*0.44f,area.height-42}
             : Rectangle{area.x,area.y+headerHeight,area.width,std::max(32.0f,area.height-panelHeight-headerHeight-8)};
         const auto painting = Fit(levelPaintings[currentLevelIndex],paintingArea);
-        DrawAsset(levelPaintings[currentLevelIndex],painting);
-        if (!levelsUnlocked[currentLevelIndex]) DrawAsset(lockedPainting,painting);
+        if (DrawLevelPainting(painting)) {
+            game->SetGameState(Game::PLAYING);
+            game->playing->SetCurrentLevel(currentLevelIndex);
+        }
         const float width = wide ? std::min(300.0f,area.width*0.48f) : area.width;
         const float x = wide ? area.x+area.width-width : area.x;
         const float bottom = area.y+area.height;

@@ -265,16 +265,10 @@ bool SewerLevel::checkForCollisions(Vector2 circleCenter, float circleRadius)
     return false;
 }
 
-bool SewerLevel::checkForPointGain(Vector2 circleCenter, float circleRadius)
+bool SewerLevel::checkForPointGain(Vector2 spriteCenter, float)
 {
-    float playerX = circleCenter.x;
-    for (auto& pipe : pipes)
-    {
-        if (!pipe->hasScored && playerX > pipe->GetHitbox().x)
-        {
-            pipe->hasScored = true;
-            return true;
-        }
+    for (auto& pipe : pipes) {
+        if (PipeScoring::TryAward(spriteCenter.x,pipe->GetScoreCenterX(),pipe->hasScored)) return true;
     }
     return false;
 }

@@ -4,6 +4,7 @@
 #include "Game.h"
 #include "AudioClip.h"
 #include "QuickplaySettings.h"
+#include "PaintingInteraction.h"
 
 class Game;
 
@@ -48,6 +49,7 @@ private:
 	void ToggleFartMusic();
     void DrawMobile();
     Rectangle MobileLogoRect() const;
+    bool DrawLevelPainting(Rectangle rect);
 
 	Game* game;
 	MenuState currentMenu{ MAIN_MENU };
@@ -60,7 +62,7 @@ private:
 	Texture2D levelPaintings[6];
 	Texture2D lockedPainting;
 
-	float paintingHoverScale = 1.0f;
+    PaintingInteraction paintingInteraction;
 	Texture2D finLogo;
 	float fHoverScale = 1.0f;
 	int fClickCount = 0;

@@ -157,17 +157,18 @@
     const bounds = element => element?.getBoundingClientRect?.();
     const canvasRect = bounds(canvas) || {top:0,bottom:height};
     let top=number(style.paddingTop), right=number(style.paddingRight), bottom=number(style.paddingBottom), left=number(style.paddingLeft);
+    const viewportBottom=bottom;
     if (touchMode && !inlinePresentation) {
       const header = chrome && !chrome.hidden ? bounds(chrome) : null;
       const dock = mobileBottom && !mobileBottom.hidden ? bounds(mobileBottom) : null;
       if (header) top=Math.max(top,header.bottom-canvasRect.top+10);
       if (dock) bottom=Math.max(bottom,canvasRect.bottom-dock.top+10);
     }
-    const layout = JSON.stringify([width,height,top,right,bottom,left,touchMode,inlinePresentation]);
+    const layout = JSON.stringify([width,height,top,right,bottom,left,viewportBottom,touchMode,inlinePresentation]);
     if (layout === lastLayout) return;
     releaseTouches(); lastLayout=layout;
     Module.ccall('floppy_resize', null, ['number','number'], [width, height]);
-    Module.ccall('floppy_safe_area', null, ['number','number','number','number'], [top,right,bottom,left]);
+    Module.ccall('floppy_safe_area', null, ['number','number','number','number','number'], [top,right,bottom,left,viewportBottom]);
   }
   function applyState() {
     updateMobileControls();

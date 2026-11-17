@@ -4,6 +4,7 @@
 #include <vector>
 #include "Obstacle.h"
 #include "ResourceCompat.h"
+#include "PipeScoring.h"
 
 enum class PipeType {
 	TopOrange,
@@ -27,6 +28,7 @@ public:
 
 	float GetX() const { return pos.x; }
 	float GetWidth() const { return static_cast<float>(chosenPipe.width); }
+    float GetScoreCenterX() const { return PipeScoring::CenterX(pos.x,GetWidth()); }
 	PipeType GetPipeType() const { return pipeType; }
 	float GetPanSpeed() const { return panSpeed; }
 

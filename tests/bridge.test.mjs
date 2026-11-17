@@ -203,7 +203,7 @@ test('safe area and visible DOM control bounds reach the game without a protocol
   h.context.Module.onRuntimeInitialized(); h.elements.play.click();
   h.context.floppySetUiState(3);
   const safe=Array.from(h.calls.filter(c=>c[0]==='floppy_safe_area').at(-1)[3]);
-  assert.deepEqual(safe,[84,12,106,12]);
+  assert.deepEqual(safe,[84,12,106,12,34],'the HUD retains the physical bottom inset separately from the control band');
   assert.equal(h.elements['touch-shoot'].hidden,false);
   h.context.floppySetUiState(7);
   assert.equal(h.calls.filter(c=>c[0]==='floppy_safe_area').at(-1)[3][2],34);

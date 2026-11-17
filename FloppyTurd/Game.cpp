@@ -201,11 +201,12 @@ void Game::SetInlinePresentation(bool enabled) {
     if (playing) playing->CancelTouchInput();
 }
 
-void Game::SetSafeArea(float top, float right, float bottom, float left) {
+void Game::SetSafeArea(float top, float right, float bottom, float left, float viewportBottom) {
     RenderLayout::safeTop = std::max(0.0f, top);
     RenderLayout::safeRight = std::max(0.0f, right);
     RenderLayout::safeBottom = std::max(0.0f, bottom);
     RenderLayout::safeLeft = std::max(0.0f, left);
+    RenderLayout::viewportSafeBottom = std::max(0.0f, viewportBottom);
 }
 
 void Game::RefreshLayout() {

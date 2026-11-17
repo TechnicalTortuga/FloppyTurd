@@ -4,6 +4,7 @@
 #include "ResourceCompat.h"
 #include <vector>
 #include "raylib.h"
+#include "PipeScoring.h"
 
 class Outhouse : public Obstacle
 {
@@ -21,6 +22,7 @@ public:
     void SetPanSpeed(float speed); // New: Set pan speed
 
     bool hasScored = false;
+    float GetScoreCenterX() const { return PipeScoring::CenterX(pos.x,(float)_OuthouseToilet.width); }
 
     float outhouseWidthScaled;
     float outhouseHeightScaled;

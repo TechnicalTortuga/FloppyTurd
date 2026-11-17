@@ -158,22 +158,12 @@ bool SnowLevel::checkForCollisions(Vector2 circleCenter, float circleRadius)
     return false;
 }
 
-bool SnowLevel::checkForPointGain(Vector2 circleCenter, float circleRadius)
+bool SnowLevel::checkForPointGain(Vector2 spriteCenter, float)
 {
-    float playerCenterX = circleCenter.x;
-    bool scored = false;
-
-    for (auto& t : toilets)
-    {
-        float passLine = t->GetTopHitbox().x + t->GetTopHitbox().width;
-        if (!t->hasScored && playerCenterX > passLine && playerCenterX < passLine + 2.0f)
-        {
-            t->hasScored = true;
-            scored = true;
-        }
+    for (auto& toilet : toilets) {
+        if (PipeScoring::TryAward(spriteCenter.x,toilet->GetScoreCenterX(),toilet->hasScored)) return true;
     }
-
-    return scored;
+    return false;
 }
 
 const std::vector<std::shared_ptr<Obstacle>>& SnowLevel::getObjLoc()

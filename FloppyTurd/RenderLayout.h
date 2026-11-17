@@ -14,6 +14,7 @@ inline bool mobile = false;
 inline float surfaceWidth = WorldWidth, surfaceHeight = WorldHeight;
 inline float cssScale = 1;
 inline float safeTop = 0, safeRight = 0, safeBottom = 0, safeLeft = 0;
+inline float viewportSafeBottom = 0;
 inline float TouchHeight() { return std::max(44.0f, 44.0f / cssScale); }
 inline void Configure(int width, int height, bool adaptive) {
     mobile = adaptive;
@@ -29,6 +30,11 @@ inline Rectangle SafeRect() {
     const float bottom = std::clamp(safeBottom / cssScale, 0.0f, surfaceHeight / 3);
     return {left, top, surfaceWidth - left - right, surfaceHeight - top - bottom};
 }
+inline Rectangle HudCornerRect() {
+    auto rect=SafeRect();
+    if (mobile) rect.height=surfaceHeight-std::clamp(viewportSafeBottom/cssScale,0.0f,surfaceHeight/3)-rect.y;
+    return rect;
+}
 struct HudLayout {
     Rectangle score, coins;
     float heartX, heartY, heartSize, heartStep;
@@ -36,14 +42,14 @@ struct HudLayout {
 };
 inline constexpr int HudScoreFontSize=38, HudCoinFontSize=24;
 inline constexpr float HudHeartSize=26, HudCoinIconSize=26, HudCoinTextOffset=34, HudCoinRowHeight=32;
-inline HudLayout MobileHud(Rectangle safe,int heartCount,float coinTextWidth) {
+inline HudLayout MobileHud(Rectangle safe,Rectangle corner,int heartCount,float coinTextWidth) {
     const float margin=8, gap=4;
     const float heartY=safe.y+14;
     const int count=std::max(1,heartCount);
     const float heartSize=std::min(HudHeartSize,(safe.y+safe.height-margin-heartY-(count-1)*gap)/count);
-    const float coinWidth=std::min(HudCoinTextOffset+coinTextWidth,safe.width*0.45f);
+    const float coinWidth=std::min(HudCoinTextOffset+coinTextWidth,corner.width*0.45f);
     return {{safe.x+(safe.width-120)/2,safe.y+margin,120,48},
-        {safe.x+safe.width-margin-coinWidth,safe.y+safe.height-margin-HudCoinRowHeight,coinWidth,HudCoinRowHeight},
+        {corner.x+corner.width-margin-coinWidth,corner.y+corner.height-margin-HudCoinRowHeight,coinWidth,HudCoinRowHeight},
         safe.x+margin,heartY,heartSize,heartSize+gap};
 }
 inline Camera2D WorldCamera() {

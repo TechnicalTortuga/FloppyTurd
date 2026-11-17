@@ -41,6 +41,7 @@ public:
 	bool SpendCoins(int cost, bool sessionOnly = false);
 	float GetCircleRadius() const;
 	Vector2 GetCircleCenter() const;
+    Vector2 GetSpriteCenter() const;
 	int GetTurdPoints() const;
 	void SetHat(Hat* hat);
 	void InitSprites();

@@ -27,8 +27,8 @@ extern "C"
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
 #endif
-void floppy_safe_area(float top, float right, float bottom, float left) {
-    if (activeGame) activeGame->SetSafeArea(top, right, bottom, left);
+void floppy_safe_area(float top, float right, float bottom, float left, float viewportBottom) {
+    if (activeGame) activeGame->SetSafeArea(top, right, bottom, left, viewportBottom);
 }
 extern "C"
 #ifdef __EMSCRIPTEN__

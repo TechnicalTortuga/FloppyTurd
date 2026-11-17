@@ -313,22 +313,11 @@ bool CastleLevel::checkForCollisions(Vector2 c, float r)
     return false;
 }
 
-bool CastleLevel::checkForPointGain(Vector2 c, float /*r*/)
+bool CastleLevel::checkForPointGain(Vector2 spriteCenter, float)
 {
-    float px = c.x;
-
-    for (auto& loo : toilets)
-    {
-        float tx = loo->GetTopHitbox().x;
-        float txRight = tx + loo->GetTopHitbox().width;
-
-        if (!loo->hasScored && px > txRight && px < txRight + 2.0f)
-        {
-            loo->hasScored = true;
-            return true;
-        }
+    for (auto& toilet : toilets) {
+        if (PipeScoring::TryAward(spriteCenter.x,toilet->GetScoreCenterX(),toilet->hasScored)) return true;
     }
-
     return false;
 }
 

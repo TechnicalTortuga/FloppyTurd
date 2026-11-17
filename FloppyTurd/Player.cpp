@@ -4,6 +4,7 @@
 #include "CoinBalance.h"
 #include "ProjectileSkills.h"
 #include "GameSfx.h"
+#include "PipeScoring.h"
 
 Player::Player(Game* g) : game(g) {
 	InitSprites();
@@ -432,6 +433,12 @@ void Player::SetPosition(Vector2 position) {
 	pos=position;
 	circleCenter={pos.x+32,pos.y+34};
 	if (currentSprite) currentSprite->SetPosition(pos);
+}
+
+Vector2 Player::GetSpriteCenter() const {
+    const float width=currentSprite ? currentSprite->GetScaledWidth() : size.x;
+    const float height=currentSprite ? currentSprite->GetScaledHeight() : size.y;
+    return {PipeScoring::CenterX(pos.x,width),pos.y+height/2};
 }
 
 const std::vector<Projectile*>& Player::GetProjectiles() const {

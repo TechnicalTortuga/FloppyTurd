@@ -28,7 +28,7 @@ public:
     void PointerInput(int phase, float x, float y);
     void SetInlinePresentation(bool enabled);
     void SetAudioActivated(bool enabled);
-    void SetSafeArea(float top, float right, float bottom, float left);
+    void SetSafeArea(float top, float right, float bottom, float left, float viewportBottom);
     void SetOrientationWaiting(bool waiting);
     bool IsTouchPresentation() const { return touchPresentation; }
 	~Game();

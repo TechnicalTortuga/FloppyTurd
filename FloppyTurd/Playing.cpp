@@ -1,3 +1,4 @@
+#include "SoundManager.h"
 #include "EmbedInput.h"
 #include "Playing.h"
 #include "AIGUI.h"
@@ -493,8 +494,9 @@ void Playing::DrawMobileGameOver() {
     Text(font,"Poop happens!",{x,y,width,32},26,YELLOW);
     Text(font,TextFormat("Pipes: %d",SCORE),{x,y+42,width,28},24);
     Text(font,TextFormat("Coins: %d",player->GetSessionCoins()),{x,y+76,width,28},24);
-    if (Button("Try Again",{x,y+118,width,ButtonHeight})) RetryLevel();
-    if (Button("Main Menu",{x,y+170,width,ButtonHeight})) LeaveGameOver();
+    const float actionsY=area.y+area.height-2*ButtonHeight-Gap;
+    if (Button("Try Again",{x,actionsY,width,ButtonHeight})) RetryLevel();
+    if (Button("Main Menu",{x,actionsY+ButtonHeight+Gap,width,ButtonHeight})) LeaveGameOver();
 }
 
 void Playing::DrawPauseMenu() {
@@ -848,10 +850,10 @@ void Playing::Update() {
                 if (!player->isInvisible && currentLevel->checkForCollisions(player->GetCircleCenter(), player->GetCircleRadius())) {
                     player->PutTheHurtOn(33);
                 }
-                else if (currentLevel->checkForPointGain(player->GetCircleCenter(), player->GetCircleRadius())) {
+                else if (currentLevel->checkForPointGain(player->GetSpriteCenter(), player->GetCircleRadius())) {
                     SCORE++;
                     TOTALSCORE++;
-                    PlaySound(ScoreSound);
+                    SoundManager::GetInstance().PlaySoundClip(ScoreSound);
                 }
 
                 if (auto snowLevel = dynamic_cast<SnowLevel*>(currentLevel.get())) {
@@ -1356,7 +1358,12 @@ void Playing::DrawMobileHUD() {
     const int hearts=player->GetTotalHearts(), slices=player->GetSlicesPerHeart();
     const int visibleHearts=(player->GetSlicesLeft()+player->GetGhostSlicesLeft()+slices-1)/slices;
     const std::string coins=std::to_string(player->GetSessionCoins());
-    const auto hud=RenderLayout::MobileHud(safe,visibleHearts,MeasureTextEx(font,coins.c_str(),RenderLayout::HudCoinFontSize,1).x);
+    const auto hud=RenderLayout::MobileHud(safe,RenderLayout::HudCornerRect(),visibleHearts,MeasureTextEx(font,coins.c_str(),RenderLayout::HudCoinFontSize,1).x);
+    if (RenderLayout::mobile && player->CanShoot() && !isPaused) {
+        // Paint below the HUD so the corner coins stay bright over the touch pad.
+        DrawRectangleRec({0,RenderLayout::surfaceHeight*0.8f,RenderLayout::surfaceWidth,RenderLayout::surfaceHeight*0.2f},
+            Color{128,128,128,(unsigned char)(heldTouchShoot ? 102 : 64)});
+    }
     for (int i=0;i<hearts;++i) {
         const int live=std::clamp(player->GetSlicesLeft()-i*slices,0,slices);
         const int ghost=std::clamp(player->GetGhostSlicesLeft()-std::max(0,i*slices-player->GetSlicesLeft()),0,slices-live);

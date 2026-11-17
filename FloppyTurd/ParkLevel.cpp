@@ -99,25 +99,12 @@ bool ParkLevel::checkForCollisions(Vector2 circleCenter, float circleRadius)
     return false;
 }
 
-bool ParkLevel::checkForPointGain(Vector2 centre, float)
+bool ParkLevel::checkForPointGain(Vector2 spriteCenter, float)
 {
-    const float playerX = centre.x;
-    bool scored = false;
-
-    for (auto& toilet : toilets)
-    {
-        const Rectangle top = toilet->GetTopHitbox();
-        const float passLine = top.x + top.width;
-
-        // Only count score when player's X is *just* passing this pipe
-        if (!toilet->hasScored && playerX > passLine && playerX < passLine + 2.0f)
-        {
-            toilet->hasScored = true;
-            scored = true;
-        }
+    for (auto& toilet : toilets) {
+        if (PipeScoring::TryAward(spriteCenter.x,toilet->GetScoreCenterX(),toilet->hasScored)) return true;
     }
-
-    return scored;
+    return false;
 }
 
 const std::vector<std::shared_ptr<Obstacle>>& ParkLevel::getObjLoc()

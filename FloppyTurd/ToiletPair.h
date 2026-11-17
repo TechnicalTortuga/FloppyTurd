@@ -4,6 +4,7 @@
 #include <vector>
 #include "Obstacle.h"
 #include "ResourceCompat.h"
+#include "PipeScoring.h"
 
 class ToiletPair : public Obstacle {
 public:
@@ -22,6 +23,7 @@ public:
 	void SetOscillationEnabled(bool enabled);
 	void SetPanSpeed(float speed);
 	float GetPanSpeed() const { return panSpeed; }
+    float GetScoreCenterX() const { return PipeScoring::CenterX(pos.x,(float)_TopToilet.width); }
 
 	float toiletScale;
 	bool hasScored = false;

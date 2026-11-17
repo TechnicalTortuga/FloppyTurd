@@ -363,18 +363,10 @@ bool DesertLevel::checkForCollisions(Vector2 circleCenter, float circleRadius)
     return false;
 }
 
-bool DesertLevel::checkForPointGain(Vector2 circleCenter, float /*circleRadius*/)
+bool DesertLevel::checkForPointGain(Vector2 spriteCenter, float)
 {
-    float playerCenterX = circleCenter.x;
-    for (auto& t : outhouses)
-    {
-        Rectangle outhouseHitbox = t->GetOuthouseHitbox();
-        float toiletRightX = outhouseHitbox.x + outhouseHitbox.width;
-        if (!t->hasScored && playerCenterX > toiletRightX && playerCenterX < toiletRightX + 2.0f)
-        {
-            t->hasScored = true;
-            return true;
-        }
+    for (auto& toilet : outhouses) {
+        if (PipeScoring::TryAward(spriteCenter.x,toilet->GetScoreCenterX(),toilet->hasScored)) return true;
     }
     return false;
 }
