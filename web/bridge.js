@@ -11,7 +11,6 @@
     if (Original) window[name] = new Proxy(Original, {construct(target,args,newTarget) {
       const context = Reflect.construct(target,args,newTarget);
       audioContexts.add(context);
-      context.addEventListener?.('statechange', updateAudioControl);
       return context;
     }});
   }
@@ -44,10 +43,8 @@
   let appliedTouchMode = null;
   const mobileTop = document.getElementById('mobile-top');
   const mobileBottom = document.getElementById('mobile-bottom');
-  const backButton = document.getElementById('touch-back');
   const pauseButton = document.getElementById('touch-pause');
   const shootButton = document.getElementById('touch-shoot');
-  const audioButton = document.getElementById('enable-audio');
   const chrome = document.getElementById('browser-chrome');
   const safeProbe = document.getElementById('safe-area');
   const rotationGate = document.getElementById('rotation-gate');
@@ -56,15 +53,6 @@
   let orientationWaiting = false;
   let lastLayout = '';
   const assetError = document.getElementById('asset-error');
-  function updateAudioControl() {
-    if (!audioButton) return;
-    const live=[...audioContexts].filter(context=>context.state!=='closed');
-    audioButton.hidden = !started || disposed || inlinePresentation || !state.visible || (!touchMode && !live.some(context=>context.state!=='running'));
-    audioButton.textContent = live.some(context=>context.state!=='running') ? 'Enable sound' : 'Sound';
-  }
-  audioButton?.addEventListener('click', () => {
-    activateAudio(); window.floppyAssets?.retryFailed();
-  });
   document.getElementById('asset-retry')?.addEventListener('click', () => window.floppyAssets?.retryFailed());
   window.floppyAssetStateChanged = () => { if (assetError) assetError.hidden = inlinePresentation || !window.floppyAssets.summary().failed; };
   const jumpPointers = new Set(), shootPointers = new Set();
@@ -100,12 +88,12 @@
     const active = !!(gameUiState & 1);
     const paused = !!(gameUiState & 4), gameOver = !!(gameUiState & 8);
     mobileTop.hidden = !visible;
-    backButton.hidden = !embedded;
     pauseButton.hidden = !active || gameOver || waiting;
-    pauseButton.textContent = paused ? 'Resume' : 'Pause';
+    pauseButton.setAttribute('aria-label',paused ? 'Resume game' : 'Pause and settings');
+    pauseButton.setAttribute('aria-pressed',String(paused));
+    pauseButton.title = paused ? 'Resume game' : 'Pause and settings';
     mobileBottom.hidden = !visible || !active || !(gameUiState & 2) || paused || gameOver || waiting;
-    shootButton.hidden = !(gameUiState & 2);
-    updateAudioControl();
+    shootButton.hidden = mobileBottom.hidden;
     if (touchMode && !started) document.getElementById('hint').textContent = 'Tap to jump · Hold the translucent pad to shoot when unlocked · Pause anytime';
     if (started) resize();
   }
@@ -145,12 +133,12 @@
     element.addEventListener('pointercancel', end);
     element.addEventListener('lostpointercapture', end);
     element.addEventListener('click', event => {
+      if (element.hidden || (held && mobileBottom.hidden)) return;
       if (event.detail === 0) { touchAction(action, true); touchAction(action, false); }
     });
   }
   bindControl(shootButton, 1, true);
   bindControl(pauseButton, 2);
-  backButton.addEventListener('click', () => send('game:request-close'));
   document.getElementById('rotation-back')?.addEventListener('click', () => touchAction(4,true));
   window.addEventListener('blur', () => { releaseTouches(); applyState(); });
   window.addEventListener('focus', applyState);
@@ -203,7 +191,7 @@
       if (context.state === 'running' || context.state === 'closed') return true;
       // Safari can report "interrupted" after backgrounding or an audio route change.
       try {
-        const resumed=context.resume().then(()=>{updateAudioControl();return context.state==='running';}).catch(()=>false);
+        const resumed=context.resume().then(()=>context.state==='running').catch(()=>false);
         // Starting a silent source from this same gesture also unlocks older WebKit.
         if (context.createBufferSource) {
           const source=context.createBufferSource();
@@ -246,8 +234,8 @@
       const px=area.left+x*area.width, py=area.top+y*area.height;
       return px>=pad.left && px<=pad.right && py>=pad.top && py<=pad.bottom;
     }
-    // Inline touch input uses the same normalized iOS-style pad footprint.
-    return x>=0.55 && x<=0.95 && y>=0.80 && y<=0.95;
+    // Inline touch input uses the same full-width bottom fifth as the visible pad.
+    return y>=0.80;
   }
   function input(payload, messageTransport = false) {
     if (!payload || payload.schema !== 'portfolio-input' || payload.version !== 1 || disposed) return false;

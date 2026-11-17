@@ -5,7 +5,7 @@ import vm from 'node:vm';
 const source = fs.readFileSync(new URL('../web/bridge.js', import.meta.url), 'utf8');
 function harness(extra = "", overrides = {}) {
   const listeners = {}, sent = [], calls = [], elements = {};
-  for (const name of ['canvas','gate','play','status','hint','fullscreen','mobile-top','mobile-bottom','touch-back','touch-pause','touch-shoot','enable-audio','asset-error','asset-retry','browser-chrome','safe-area','rotation-gate','rotation-title','rotation-description','rotation-back']) elements[name] = { hidden:false, textContent:'', clientWidth:960, clientHeight:540, addEventListener(name, fn) { this[name] = fn; }, focus() {} };
+  for (const name of ['canvas','gate','play','status','hint','fullscreen','mobile-top','mobile-bottom','touch-pause','touch-shoot','asset-error','asset-retry','browser-chrome','safe-area','rotation-gate','rotation-title','rotation-description','rotation-back']) elements[name] = { hidden:false, textContent:'', clientWidth:960, clientHeight:540, addEventListener(name, fn) { this[name] = fn; }, focus() {}, setAttribute(name,value) {this[name]=value;} };
   elements.canvas.getContext = function(type,attributes) { this.contextAttributes=attributes; return {}; };
   const parent = { postMessage: (message, origin) => sent.push({message, origin}) };
   const context = { console, URL, URLSearchParams, Uint8Array,
@@ -24,7 +24,7 @@ function harness(extra = "", overrides = {}) {
   return { context, listeners, sent, calls, elements, envelope };
 }
 
-test('a genuine tap recovers interrupted Safari audio; explicit Sound selects playback', async()=>{
+test('a genuine tap recovers interrupted Safari audio; Play selects playback', async()=>{
   class Context {
     state='interrupted'; resumes=0;
     addEventListener(){}
@@ -37,7 +37,7 @@ test('a genuine tap recovers interrupted Safari audio; explicit Sound selects pl
   const audio=new h.context.AudioContext();
   h.listeners.pointerup();await Promise.resolve();
   assert.equal(audio.state,'running');assert.equal(audio.resumes,1);
-  h.elements['enable-audio'].click();
+  h.listeners.pointerdown({pointerType:'touch'});
   assert.equal(navigator.audioSession.type,'playback');
 });
 
@@ -45,7 +45,8 @@ test('standalone DOM controls keep page active; actual window blur pauses and fo
   const h=harness('&touch=1',{standalone:true});let focused=true;
   h.context.document.hasFocus=()=>focused;
   h.context.Module.onRuntimeInitialized();h.elements.play.click();
-  h.elements['enable-audio'].click();
+  h.context.floppySetUiState(1);
+  h.elements['touch-pause'].pointerdown({pointerId:1,preventDefault(){},stopImmediatePropagation(){}});
   assert.equal(h.calls.filter(c=>c[0]==='floppy_set_paused').at(-1)[3][0],0);
   focused=false;h.listeners.blur();
   assert.equal(h.calls.filter(c=>c[0]==='floppy_set_paused').at(-1)[3][0],1);
@@ -102,7 +103,8 @@ test('touch controls support tap jump, held shooting, pause, and cancellation', 
   h.elements['touch-pause'].pointerdown(pointer(3));
   assert.deepEqual(Array.from(h.calls.at(-1)[3]),[2,1]);
   h.context.floppySetUiState(5);
-  assert.equal(h.elements['touch-pause'].textContent,'Resume');
+  assert.equal(h.elements['touch-pause']['aria-label'],'Resume game');
+  assert.equal(h.elements['touch-pause']['aria-pressed'],'true');
   assert.equal(h.elements['mobile-bottom'].hidden,true);
 });
 test('touch controls stay hidden in menus and locked shooting is not offered', () => {
@@ -122,19 +124,26 @@ test('forwarded touch uses the visible shoot pad bounds and keeps other taps as 
   const h=harness('&touch=1');h.listeners.message(h.envelope('host:init',{visible:true}));h.context.Module.onRuntimeInitialized();h.elements.play.click();
   h.context.floppySetUiState(3);
   h.elements.canvas.getBoundingClientRect=()=>({left:0,top:0,width:400,height:700});
-  h.elements['touch-shoot'].getBoundingClientRect=()=>({left:220,right:380,top:560,bottom:665});
+  h.elements['touch-shoot'].getBoundingClientRect=()=>({left:0,right:400,top:560,bottom:700});
   const pointer=(x,y,id,phase='down')=>({schema:'portfolio-input',version:1,kind:'pointer',phase,pointerId:id,pointerType:'touch',x,y,button:0,buttons:phase==='down'?1:0,pressure:0.5});
   h.context.portfolioGame.input(pointer(.7,.85,1));
   assert.deepEqual(Array.from(h.calls.at(-1)[3]),[1,1]);
-  h.context.portfolioGame.input(pointer(.2,.85,2));
+  h.context.portfolioGame.input(pointer(.2,.65,2));
   assert.deepEqual(Array.from(h.calls.at(-1)[3]),[0,1]);
   h.context.portfolioGame.input(pointer(.7,.85,3));
   h.context.portfolioGame.input(pointer(.7,.85,1,'cancel'));
   assert.notDeepEqual(Array.from(h.calls.at(-1)[3]),[1,0],'another finger still holds shooting');
   h.context.portfolioGame.input(pointer(.7,.85,3,'up'));
   assert.deepEqual(Array.from(h.calls.at(-1)[3]),[1,0]);
-  h.context.portfolioGame.input(pointer(.99,.85,4));
+  h.context.portfolioGame.input(pointer(.99,.79,4));
   assert.deepEqual(Array.from(h.calls.at(-1)[3]),[0,1],'outside the visible pad remains a jump');
+  h.context.portfolioGame.input(pointer(.01,.99,5));
+  assert.deepEqual(Array.from(h.calls.at(-1)[3]),[1,1],'the pad includes the lower-left screen edge');
+  h.context.portfolioGame.input(pointer(.99,.99,6));
+  assert.deepEqual(Array.from(h.calls.at(-1)[3]),[1,1],'the pad includes the lower-right screen edge');
+  h.context.portfolioGame.setPresentation({inline:true});
+  h.context.portfolioGame.input(pointer(.01,1,7));
+  assert.deepEqual(Array.from(h.calls.at(-1)[3]),[1,1],'inline touch uses the same full-width bottom edge');
 });
 
 const modifiers={shift:false,ctrl:false,alt:false,meta:false};

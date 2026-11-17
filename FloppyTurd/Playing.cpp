@@ -1356,7 +1356,7 @@ void Playing::DrawMobileHUD() {
     const int hearts=player->GetTotalHearts(), slices=player->GetSlicesPerHeart();
     const int visibleHearts=(player->GetSlicesLeft()+player->GetGhostSlicesLeft()+slices-1)/slices;
     const std::string coins=std::to_string(player->GetSessionCoins());
-    const auto hud=RenderLayout::MobileHud(safe,visibleHearts,MeasureTextEx(font,coins.c_str(),18,1).x);
+    const auto hud=RenderLayout::MobileHud(safe,visibleHearts,MeasureTextEx(font,coins.c_str(),RenderLayout::HudCoinFontSize,1).x);
     for (int i=0;i<hearts;++i) {
         const int live=std::clamp(player->GetSlicesLeft()-i*slices,0,slices);
         const int ghost=std::clamp(player->GetGhostSlicesLeft()-std::max(0,i*slices-player->GetSlicesLeft()),0,slices-live);
@@ -1367,10 +1367,10 @@ void Playing::DrawMobileHUD() {
         else path=live==3 ? TurdHeartSmall : live==2 ? TurdHeart2Thirds : live==1 ? TurdHeart1Third : TurdHeart0ThirdHollow;
         DrawAsset(TextureCache::Get(path),hud.Heart(i));
     }
-    DrawAsset(_CoinBag,{hud.coins.x,hud.coins.y+2,20,20});
-    OutlinedText(font,coins.c_str(),{hud.coins.x+26,hud.coins.y,hud.coins.width-26,hud.coins.height},18,GOLD);
+    DrawAsset(_CoinBag,{hud.coins.x,hud.coins.y+3,RenderLayout::HudCoinIconSize,RenderLayout::HudCoinIconSize});
+    OutlinedText(font,coins.c_str(),{hud.coins.x+RenderLayout::HudCoinTextOffset,hud.coins.y,hud.coins.width-RenderLayout::HudCoinTextOffset,hud.coins.height},RenderLayout::HudCoinFontSize,GOLD);
     if (savedLevelIndex!=5) {
-        OutlinedText(font,TextFormat("%d",SCORE),hud.score,30);
+        OutlinedText(font,TextFormat("%d",SCORE),hud.score,RenderLayout::HudScoreFontSize);
     }
 }
 

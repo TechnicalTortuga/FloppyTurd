@@ -34,14 +34,16 @@ struct HudLayout {
     float heartX, heartY, heartSize, heartStep;
     Rectangle Heart(int index) const { return {heartX,heartY+index*heartStep,heartSize,heartSize}; }
 };
+inline constexpr int HudScoreFontSize=38, HudCoinFontSize=24;
+inline constexpr float HudHeartSize=26, HudCoinIconSize=26, HudCoinTextOffset=34, HudCoinRowHeight=32;
 inline HudLayout MobileHud(Rectangle safe,int heartCount,float coinTextWidth) {
     const float margin=8, gap=4;
     const float heartY=safe.y+14;
     const int count=std::max(1,heartCount);
-    const float heartSize=std::min(20.0f,(safe.y+safe.height-margin-heartY-(count-1)*gap)/count);
-    const float coinWidth=std::min(26+coinTextWidth,safe.width*0.45f);
-    return {{safe.x+(safe.width-100)/2,safe.y+margin,100,40},
-        {safe.x+safe.width-margin-coinWidth,safe.y+safe.height-margin-24,coinWidth,24},
+    const float heartSize=std::min(HudHeartSize,(safe.y+safe.height-margin-heartY-(count-1)*gap)/count);
+    const float coinWidth=std::min(HudCoinTextOffset+coinTextWidth,safe.width*0.45f);
+    return {{safe.x+(safe.width-120)/2,safe.y+margin,120,48},
+        {safe.x+safe.width-margin-coinWidth,safe.y+safe.height-margin-HudCoinRowHeight,coinWidth,HudCoinRowHeight},
         safe.x+margin,heartY,heartSize,heartSize+gap};
 }
 inline Camera2D WorldCamera() {
